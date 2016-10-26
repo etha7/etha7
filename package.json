@@ -1,20 +1,13 @@
 {
-  "name": "cs147-lab-1",
-  "description": "Serving static content via html files",
+  "name": "hello-world",
+  "description": "hello world test app",
   "version": "0.0.1",
-  "author": "CS147 Staff <cs147@cs.stanford.edu>",
-
-  "repository": {
-  	"type": "git",
-  	"url": "https://github.com/StanfordHCI/cs147"
-  },
-  "license": "MIT",
-
-  "main": "server.js",
+  "private": true,
   "dependencies": {
-    "express": "3.x"
+    "express": "3.x",
+    "express3-handlebars": "*"
   },
   "engines": {
-  	"node": "0.10.x"
-  }
+    "node": "0.10.x"
+  }  
 }
