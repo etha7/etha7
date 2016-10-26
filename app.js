@@ -32,5 +32,7 @@ Module dependencies.
    }
 
    // Add routes here
+
+   app.get('/:userName', hello.view);
    app.get('/hello/:userName', hello.view);
 
