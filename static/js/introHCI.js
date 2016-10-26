@@ -10,11 +10,12 @@ $(document).ready(function() {
  */
 function initializePage() {
 	$("#scientistButton").click(function(e) {
-		$('os').append("<h1>Science!</h1>");
+      console.log("science");
+		$('ol').append("<h1>Science!</h1>");
 	});
 
 	$("#citizenButton").click(function(e) {
-		$('os').append("<h1>Citizen!</h1>");
+		$('ol').append("<h1>Citizen!</h1>");
 	});
 	// Add any additional listeners here
 	// example: $("#div-id").click(functionToCall);
