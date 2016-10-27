@@ -1,0 +1,18 @@
+#container {
+width:960px;
+margin:20px auto;
+}
+
+#content {
+float:right;
+width:620px;
+}
+
+#sidebar {
+float:left;
+width:340px;
+}
+
+#footer {
+clear:both;
+}
