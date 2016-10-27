@@ -10,7 +10,7 @@ var handlebars = require('express3-handlebars')
 
 //Define all views\webpages
 var index   = require('./routes/index');
-var science = require('./routes/science');
+var scientist = require('./routes/scientist');
 var citizen = require('./routes/citizen');
 
 var app = express();
@@ -37,7 +37,7 @@ if ('development' == app.get('env')) {
 
 // Add routes here
 app.get('/', index.view);
-app.get('/science', science.view);
+app.get('/scientist', scientist.view);
 app.get('/citizen', citizen.view);
 
 //app.get('/science/:role', science.view);
