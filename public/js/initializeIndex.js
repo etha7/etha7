@@ -11,7 +11,7 @@ function initializePage() {
  */
  $("#scientistButton").click(function(e) {
         //$('#buttonContainer').append("<h1>Science!</h1>");
-        window.location.href = "/science";
+        window.location.href = "/scientist";
                                         });
                
  $("#citizenButton").click(function(e) {

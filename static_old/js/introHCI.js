@@ -10,7 +10,7 @@ $(document).ready(function() {
  */
 function initializePage() {
 	$("#scientistButton").click(function(e) {
-      console.log("science");
+      console.log("scientist");
 		$('#buttonContainer').append("<h1>Science!</h1>");
 	});
 
