@@ -37,7 +37,7 @@
   
       function drawRiskChart() {
         var data = google.visualization.arrayToDataTable([
-          ['Percent Chance of Sickness', 'Resources Gathered'],
+          ['Percent Chance of Sickness', ''],
           ['5%',  1000],
           ['10%',  1170],
           ['15%',  660],
@@ -47,6 +47,18 @@
         var options = {
           title: 'Risk vs Reward',
           curveType: 'function',
+          vAxis: {
+           title: 'Number of Resources Gathered',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
+          hAxis: {
+           title: 'Percent Chance of Infection',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
           legend: { position: 'bottom' }
         };
         var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
@@ -54,7 +66,7 @@
       }
       function drawTrustChart() {
         var data = google.visualization.arrayToDataTable([
-          ['Percent Chance of Sickness', 'Percent of People who Team Up'],
+          ['Percent Chance of Sickness', ''],
           ['5%',  78],
           ['10%',  56],
           ['15%',  34],
@@ -64,6 +76,18 @@
         var options = {
           title: 'Trust',
           curveType: 'function',
+                    vAxis: {
+          title: 'Percent of People who Team Up',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
+          hAxis: {
+           title: 'Percent Chance of Infection',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
           legend: { position: 'bottom' }
         };
         var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
@@ -82,7 +106,8 @@
         // Set chart options
         var options = {'title':'Morality',
                        'width':400,
-                       'height':300};
+                       'height':300
+                     };
         var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
         chart.draw(data, options);
       }
