@@ -7,18 +7,18 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link href="css/bootstrap.min.css" rel="stylesheet">
       <link href="css/bootstrap-theme.min.css" rel="stylesheet">
-      <link href="css/introHCI.css" rel="stylesheet">
+      <link href="css/default.css" rel="stylesheet">
 
       <body>
       <!-- this is a comment in HTML -->
+      <div class="col-md-6 center-block text-center">
          <h1>Disease.io</h1> <!-- h1 through h5 are headers. The higher the number, the smaller the header -->
-            <h4>Embark upon a citizen science journey to protect yourself as you explore diseased lands!</h4>
-
-
-            <!-- p means paragraph -->
-            <p>You are a citizen!</p>
-
+         <h2>You are a citizen!</h2>
+      </div>
+      <canvas id="mainCanvas" ></canvas>
             <script src="https://code.jquery.com/jquery.js"></script>
             <script src="js/bootstrap.min.js"></script>
+            <script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
+            <script src="js/mainGame.js"></script>
        </body>
 </html>
