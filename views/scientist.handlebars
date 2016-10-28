@@ -17,6 +17,7 @@
     <!-- Custom CSS -->
     <link href="css/style.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -127,6 +128,13 @@
                 </div>
             </div>
         </div>
+        <!-- TODO ACTUALLY GET DL DATA TO WORK -->
+         <div align="center">
+             <a href="#download-data" class="btn btn-default" id="download-data">Download Data</a>
+         </div>
+         <div id="help">
+             <a href="#help" class="btn btn-default" id="help">Help</a>
+          </div>
         <!-- /#page-content-wrapper -->
 
     </div>
@@ -143,6 +151,20 @@
     $("#menu-toggle").click(function(e) {
         e.preventDefault();
         $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+    <script>
+    $("#download-data").click(function(e) {
+         e.preventDefault();
+         alert("Files Downloaded!"); 
+         //TODO make download data do something.
+    });
+    </script>
+    <script>
+    $("#help").click(function(e) {
+         e.preventDefault();
+         alert("You are doomed, there is no help as of yet."); 
+         //TODO make help do something.
     });
     </script>
     <script>
