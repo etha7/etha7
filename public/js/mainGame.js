@@ -14,6 +14,10 @@ function main(){
    var resourceText =  initResourceText(stage,canvas, player);
    createjs.Touch.enable(stage);
    
+   window.addEventListener("resize", function(){
+      stage.canvas.width  = window.innerWidth;
+      stage.canvas.height = window.innerHeight;
+   }, false);
 
    
    //Main game loop
