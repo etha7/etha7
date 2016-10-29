@@ -7,23 +7,61 @@ main();
 
 function main(){
    var stage        = new createjs.Stage("mainCanvas");
+   var world        = initWorld();
    var background   = initBackground(stage, canvas);
    var left         = initJoysticks(stage).left;
    var player       = initPlayer(stage, left);
    var resources    = initResources(stage, canvas);
-   var resourceText =  initResourceText(stage,canvas, player);
+   var resourceText = initResourceText(stage,canvas, player);
+
+   //Initialize easystar pathfinding
+   var easystar = new EasyStar.js();
+   easystar.setGrid(world);
+   easystar.setAcceptableTiles([0]);
+   easystar.enableDiagonals();
+   background.getEaselShape().on("click", function(e){
+         var pos = player.getPos();
+         easystar.findPath(Math.floor(pos.x), Math.floor(pos.y), 
+                           Math.floor(e.stageX), Math.floor(e.stageY), function(path){ 
+              if( path === null) {
+                  console.log("Path not found");
+              }
+              else{
+
+                  console.log("length before");
+                  console.log(path.length);
+                  //Remove every fourth element of path
+                  for(var i = 0; i < path.length; i++)
+                  {
+                     if((i%2) === 0)
+                     {
+                        path.splice(i,2); //remove i from path
+                        i++;
+                     }
+                  }
+
+                  console.log("length after");
+                  console.log(path.length);
+                  player.path = path;
+              }
+         });
+   });
+
    createjs.Touch.enable(stage);
    
    window.addEventListener("resize", function(){
       stage.canvas.width  = window.innerWidth;
       stage.canvas.height = window.innerHeight;
    }, false);
-
    
    //Main game loop
+   var FPS = 50;
+   createjs.Ticker.setFPS(FPS);
    createjs.Ticker.addEventListener("tick", function(){
+      easystar.calculate();
       player.move();
       player.pickup(stage, resources);
+      player.goPath();
       resourceText.text = "Resources: "+player.getResources();
       stage.update();
    });
@@ -44,17 +82,32 @@ function Resource(value){
    this.remove = function(stage) {stage.removeChild(this.getEaselShape())};
 }
 
+Array.prototype.equals = function( array ) {
+  return this.length == array.length && 
+           this.every( function(this_i,i) { return this_i == array[i] } )  
+  }
 
 function Player(joystick){
   
    this.body = new Circle(new createjs.Shape(),"red",20, {x: canvas.width/2, y: canvas.height/2}); 
    this.joystick = joystick;
    this.resources = 0;
+   this.path = [];
+
+   this.goPath = function(){
+      
+      if(this.path.equals([]) === false)
+      {
+         this.body.setPos({x: this.path[0].x, y: this.path[0].y});
+         this.path.splice(0,1); //Remove element 0;
+      }
+   }
 
    this.getEaselShape = function(){return this.body.getEaselShape();};
    this.getResources = function(){ return this.resources;};
    this.setResources = function(newResources){ this.resources = newResources};
-
+   this.getPos = function(){return this.body.getPos();};
+   
    //Update player's location with respect to joystick
    this.move = function () {
 
@@ -79,7 +132,6 @@ function Player(joystick){
          var pt =  easelShape.globalToLocal(pos.x, pos.y); //hitTest needs coordinates relative to easelShape
          if(easelShape.hitTest(pt.x, pt.y)) //If player is over resource
          {
-            console.log("HIT");
             this.setResources(this.getResources() + x.value);
             var remIndex = resources.indexOf(x);
             resources.splice(remIndex,1);
@@ -204,6 +256,18 @@ function Joystick(center){
       stage.update();
    }
 
+}
+
+function initWorld(){
+   var size = 1000;
+   var world = []
+   for(var i = 0; i < size; i++){
+      world[i] = []
+      for(var j = 0; j < size; j++){
+         world[i][j] =0;
+      }
+   }
+   return world;
 }
 
 function initResourceText(stage, canvas, player){
