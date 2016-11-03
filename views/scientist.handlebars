@@ -114,7 +114,7 @@
     </script>
 </head>
 
-<body>
+<body onload="document.getElementById('PageContent').innerHTML=document.getElementById('RiskContent').innerHTML;">
 
     <div id="wrapper">
 
@@ -125,14 +125,15 @@
                     <a href="/">Home</a>
                 </li>
                 <li>
-                    <a href="/scientist" id="Risk">Risk Graph</a>
+                    <a href="/scientist" id="Risk" onclick="document.getElementById('PageContent').innerHTML=document.getElementById('RiskContent').innerHTML;">Risk Graph</a>
                 </li>
                 <li>
-                    <a href="/scientist" id="Trust">Trust Graph</a>
+                    <a href="/scientist" id="Trust" onclick="document.getElementById('PageContent').innerHTML=document.getElementById('TrustContent').innerHTML;">Trust Graph</a>
                 </li>
                 <li>
-                    <a href="/scientist" id="Morality">Morality Graph</a>
+                    <a href="/scientist" id="Morality" onclick="document.getElementById('PageContent').innerHTML=document.getElementById('MoralityContent').innerHTML;">Morality Graph</a>
                 </li>
+
             </ul>
         </div>
         <!-- /#sidebar-wrapper -->
@@ -142,12 +143,25 @@
             <div class="container-fluid">
                 <div class="row">
                 <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
+                    <h1>Disease.io Data Center</h1>
                     <div class="col-lg-12">
-                        <h1>Disease.io Data Center</h1>
-                          <h2> Risk vs Reward </h2>
-                           <p>Welcome to the Disease.io Data Center! Here, you can find information
-                             about human risk. </p>
-                            <div id="chart_div"></div>
+                          <div id="PageContent"> </div>
+                          <div id="chart_div"></div>
+                          <div id="RiskContent" style="visibility:hidden;">
+                          <h2>Risk vs Reward</h2>
+                            <p>Welcome to the Disease.io Data Center! Here, you can find information
+                             about human risk.</p>
+                        </div>
+                        <div id="TrustContent" style="visibility:hidden;">
+                          <h2>Trust</h2>
+                          <p>Welcome to the Disease.io Data Center! Here, you can find information
+                             about trust.</p>
+                        </div>
+                        <div id="MoralityContent" style="visibility:hidden;">
+                          <h2>Morality</h2>
+                            <p>Welcome to the Disease.io Data Center! Here, you can find information
+                             about morality.</p>
+                        </div>
                     </div>
                 </div>
             </div>
