@@ -6,113 +6,199 @@ main();
 
 
 function main(){
+   //Initialize the game world
    var stage        = new createjs.Stage("mainCanvas");
    var world        = initWorld();
    var background   = initBackground(stage, canvas);
+   
+   //Initalize the game controls and player
    var left         = initJoysticks(stage).left;
    var player       = initPlayer(stage, left);
+       player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
+
+   //Initialize array of resource objects and resource text
    var resources    = initResources(stage, canvas);
    var resourceText = initResourceText(stage,canvas, player);
 
-   //Initialize easystar pathfinding
-   var easystar = new EasyStar.js();
-   easystar.setGrid(world);
-   easystar.setAcceptableTiles([0]);
-   easystar.enableDiagonals();
-   background.getEaselShape().on("click", function(e){
-         var pos = player.getPos();
-         easystar.findPath(Math.floor(pos.x), Math.floor(pos.y), 
-                           Math.floor(e.stageX), Math.floor(e.stageY), function(path){ 
-              if( path === null) {
-                  console.log("Path not found");
-              }
-              else{
-
-                  console.log("length before");
-                  console.log(path.length);
-                  //Remove every fourth element of path
-                  for(var i = 0; i < path.length; i++)
-                  {
-                     if((i%2) === 0)
-                     {
-                        path.splice(i,2); //remove i from path
-                        i++;
-                     }
-                  }
-
-                  console.log("length after");
-                  console.log(path.length);
-                  player.path = path;
-              }
-         });
-   });
-
-   createjs.Touch.enable(stage);
+   //Initialize Pathfinding
+   var easystar = initPathfinding(world, player, background); 
    
+   //Enable touch based interface for mobile devices
+   createjs.Touch.enable(stage);
+
+   //Resize canvas on window resize   
    window.addEventListener("resize", function(){
       stage.canvas.width  = window.innerWidth;
       stage.canvas.height = window.innerHeight;
    }, false);
    
+
    //Main game loop
    var FPS = 50;
    createjs.Ticker.setFPS(FPS);
    createjs.Ticker.addEventListener("tick", function(){
+
+      //Do pathfinding calculation
       easystar.calculate();
+
+      //Move player according to joystick
       player.move();
+
+      //Check if player is colliding with resources
       player.pickup(stage, resources);
+
+      //Move along calculated pathfinding path
       player.goPath();
+
+      //Update resource text
       resourceText.text = "Resources: "+player.getResources();
+
+      //Commit all updates to actual stage/canvas
       stage.update();
+
    });
 
 }
+//Utility functions:------------------------------------------------
 
-function Resource(value){
-   this.body = new Circle(new createjs.Shape(),"blue",10, {x: 0, y: 0})
-   this.value = value;
-
-   this.getEaselShape = function(){return this.body.getEaselShape()};
-   this.getPos = function(){return this.body.getPos();};
-   this.setPos = function(pos){
-      this.body.getEaselShape().x = pos.x;
-      this.body.getEaselShape().y = pos.y;
-      };
-   this.add = function(stage) {this.body.add(stage);};
-   this.remove = function(stage) {stage.removeChild(this.getEaselShape())};
-}
-
+//Utility function for comparing arrays for equality
 Array.prototype.equals = function( array ) {
   return this.length == array.length && 
            this.every( function(this_i,i) { return this_i == array[i] } )  
-  }
+}
+
+//Utility functions:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+//Class definitions:------------------------------------------------
+
+//Base class for all primitive objects that get drawn
+function easelObject(pos, color){
+
+   this.easelShape = new createjs.Shape();
+   this.getEaselShape = function(){ return this.easelShape; };
+
+   this.test = function(pos) { this.getEaselShape().x = pos.x; this.getEaselShape().y = pos.y;};
+   this.test({x: 10, y: 11});
+   console.log(this.getEaselShape().x);
+   console.log(this.getEaselShape().y);
+
+   //Set initial position
+   this.easelShape.x = pos.x;
+   this.easelShape.y = pos.y;
+
+   //Position setters and getters
+   this.getPos = function() { return {x: this.getEaselShape().x, y: this.getEaselShape().y}; };
+   this.setPos = function(pos) { this.getEaselShape().x = pos.x; this.getEaselShape().y = pos.y;};
+
+   //The object's color
+   this.color = color;
+
+   //Adds the current object to the stage
+   this.add = function(stage) {
+      stage.addChild(this.getEaselShape());
+      stage.update();
+   };
+
+   //Removes the current object from the stage
+   this.remove = function(stage) {
+      stage.removeChild(this.getEaselShape());
+   };
+}
+
+//A class for representing circles
+function Circle(pos, color, radius ){
+   //Call constructor of superclass
+   easelObject.call(this, pos, color);  
+
+   //Set the new radius
+   this.radius = radius;
+
+   //Determines if circle is dotted outline
+   this.isDotted = false;
+   this.invertIsDotted = function(){ this.isDotted = !this.isDotted;}
+
+   //Function: draw a circle
+   this.draw = function(){
+      this.easelShape.graphics.beginFill(this.color).drawCircle(0,0,this.radius);
+   }
+   //Function: draw a dotted circle
+   this.drawDotted = function(){
+      this.easelShape.graphics.setStrokeDash([2,2]);
+      this.easelShape.setStrokeStyle(2).beginsStroke("grey").drawCircle(0,0,this.radius);
+   }
+    
+   //Actually draw the circle
+   if(this.isDotted === true)
+      this.drawDotted();
+   else
+      this.draw();
+}
+
+function Resource(value){
+   Circle.call(this, {x: 0, y: 0}, "blue", 10);
+   this.value = value;
+}
+
+function DiseaseZone(playerPos){
+   Circle.call(this, playerPos, "grey", 30);
+   this.invertIsDotted();
+}
+
+function Camera(pos, width, height){
+   this.pos = pos;
+   this.width = width;
+   this.height = height;
+   this.getPos = function(){return this.pos;};
+   this.setPos = function(pos) {this.pos = pos;};
+   this.getWidth = function(){return this.width;};
+   this.setWidth = function(width) {this.width = width;};
+   this.getHeight = function(){return this.height;};
+   this.setHeight = function(height) {this.height = height;};
+}
+
+
+
+
 
 function Player(joystick){
-  
-   this.body = new Circle(new createjs.Shape(),"red",20, {x: canvas.width/2, y: canvas.height/2}); 
+   Circle.call( this, {x: canvas.width/2, y: canvas.height/2}, "red", 20);
+
+   this.diseaseZone = new DiseaseZone(this.getPos());
    this.joystick = joystick;
    this.resources = 0;
+   this.camera = {};
    this.path = [];
 
+   this.getCamera = function(){ return this.camera;};
+   this.setCamera = function(camera){ this.camera = camera; };
+   
+   //Moves the player along a path determined by A* algorithm
    this.goPath = function(){
       
       if(this.path.equals([]) === false)
       {
-         this.body.setPos({x: this.path[0].x, y: this.path[0].y});
+         this.setPos({x: this.path[0].x, y: this.path[0].y});
          this.path.splice(0,1); //Remove element 0;
       }
    }
 
-   this.getEaselShape = function(){return this.body.getEaselShape();};
    this.getResources = function(){ return this.resources;};
    this.setResources = function(newResources){ this.resources = newResources};
-   this.getPos = function(){return this.body.getPos();};
+
+   //Override inherited setPos
+   var parentSetPos = this.setPos;
+   this.setPos = function(pos){ 
+       this.camera.setPos(pos);
+       parentSetPos.call(this, pos); //need call so 'this' is defined as the current Player
+   };
+      
    
    //Update player's location with respect to joystick
    this.move = function () {
 
       //Move player with left joystick
-      var playerPos = this.body.getPos();
+      var playerPos = this.getPos();
       var direction = this.joystick.getDirection();
       if(isNaN(direction.x) || isNaN(direction.y))
       {
@@ -121,9 +207,10 @@ function Player(joystick){
       }
       playerPos.x += this.joystick.getForce()*direction.x;
       playerPos.y += this.joystick.getForce()*direction.y;
-      this.body.setPos(playerPos);
+      this.setPos(playerPos);
    };
 
+   //Check if standing on any resources
    this.pickup = function(stage, resources){
       var easelShape = this.getEaselShape();
       var resourceCopy = resources.slice(0,resources.length);
@@ -139,95 +226,60 @@ function Player(joystick){
          }
       }
    }
-
-   //Add player to stage
-   this.add = function(stage) {
-             stage.addChild(this.getEaselShape()); 
-             stage.update();
-           }; 
-           
-   //Get underlying Easle.js shape
-   this.getEaselShape = function(){return this.body.getEaselShape();};
 }
 
 
 
 //Dragable Class: Makes objects Dragable
-function Dragable(shape){
-   this.shape = shape;
-   this.getEaselShape = function() {return this.shape.getEaselShape()};
-   
+function Dragable(pos, color){
+
+   //Call superclass's constructor
+   EaselObject.call(this, pos, color);
+
+   //Update coordinates while object is moved while pressed
    this.getEaselShape().on("pressmove", function(e){
       e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
       e.target.y = e.stageY;
    });
+
 };
 
-function Circle(easelShape, color, radius, center){
-   
-   this.shape   = easelShape; //underlying Easel.js shape
-   this.getEaselShape = function(){return this.shape;};
-   this.shape.x = center.x;
-   this.shape.y = center.y;
 
-   this.radius  = radius;
-   this.center  = center;
-   this.color   = color;
+function Rectangle(pos, color, width, height){
+   EaselObject.call(this, pos, color);
+   this.width  = width;
+   this.height = height;
 
-   this.draw = function(){
-      this.shape.graphics.beginFill(this.color).drawCircle(0,0,this.radius);
-   }
-   this.draw();
-   this.add = function(stage) {
-      stage.addChild(this.getEaselShape());
-      stage.update();
-   }
-   this.getPos = function() {return {x: this.getEaselShape().x, y: this.getEaselShape().y}};
-   this.setPos = function(pos) {this.getEaselShape().x = pos.x, this.getEaselShape().y = pos.y};
-}
-
-function Rectangle(easelShape, color, width, height, center){
-   
-   this.shape   = easelShape; //underlying Easel.js shape
-   this.getEaselShape = function(){return this.shape;};
-
-   this.center  = center;
-   this.color   = color;
-
-   this.shape.x = this.center.x;
-   this.shape.y = this.center.y;
-
+   //Draw the rectangle
    this.draw = function(){
       this.shape.graphics.beginFill(this.color).drawRect(center.x,center.y,this.width, this.height);
    }
    this.draw();
 
-   this.add = function(stage){
-      stage.addChild(this.getEaselShape());
-      stage.update();
-   }
 }
 
-function Joystick(center){
 
-   this.center = center 
+//Creates a Joystick at the given location
+function Joystick(pos){
+
+   this.pos = pos;
 
    this.baseSize = 35;
    this.baseColor = "grey";
-   this.base = new Circle(new createjs.Shape(), this.baseColor, this.baseSize, this.center);
+   this.base = new Circle(this.pos, this.baseColor, this.baseSize);
 
    this.stickSize = 25;
    this.stickColor = "white";
-   this.stick =  new Circle(new createjs.Shape(),this.stickColor,this.stickSize, this.center);
+   this.stick =  new Circle(this.pos, this.stickColor, this.stickSize);
 
    //Limited Dragging
    this.stick.getEaselShape().on("pressmove", function(e){
       e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
       e.target.y = e.stageY;
    });
-
-   var baseVar = this.base;
-   //Reset drag on mouseUp
+   
+   var baseVar = this.base; //No idea why I have to do this; scoping?
+   //Reset stick to base potition on when joystick is released
    this.stick.getEaselShape().on("pressup", function(e){
       e.target.x = baseVar.getPos().x;  
       e.target.y = baseVar.getPos().y;
@@ -235,6 +287,7 @@ function Joystick(center){
    
    this.getPos = function() { return this.stick.getPos()};
 
+   //Get the direction the joystick is pointing
    this.getDirection = function(){
       var v = this.stick.getPos();
       var w = this.base.getPos();
@@ -244,6 +297,8 @@ function Joystick(center){
 
       return {x: x1/mag1, y: y1/mag1}
    };
+
+   //Get the force acting on a player by the joystick
    this.getForce = function(){
       var v = this.stick.getPos();
       var w = this.base.getPos();
@@ -258,6 +313,9 @@ function Joystick(center){
 
 }
 
+//Class definitions:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//Creates a square world of size 1000 that our pathfinding algorithm can use
 function initWorld(){
    var size = 1000;
    var world = []
@@ -270,25 +328,27 @@ function initWorld(){
    return world;
 }
 
+//Creates and displayes the Resources: x text
 function initResourceText(stage, canvas, player){
    resourceText = new createjs.Text("Resources: "+player.getResources(), "20px Arial", "#000000");
    resourceText.x = 0;
-   resourceText.y = canvas.height/12;
-   resourceText.textBaseline = "alphabet";
+   resourceText.y = canvas.height/12; //TODO more logically position Resources text
+   resourceText.textBaseline = "alphabet"; //Not sure what this setting does
    stage.addChild(resourceText);
    return resourceText;
 
 }
 
+//Creates an array of randomly placed Resources on the stage
 function initResources(stage, canvas){
 
-   var numResources = 3;
+   var numResources = 3; //TODO make global/make logical choice. Too high a number may incur resource problems
    var currPos = {x: 0, y: 0};
    var resources = [];
    var resourceValue = 10;
 
    for (i = 0; i < numResources; i ++){
-      currPos.x = Math.floor((Math.random() * canvas.width));
+      currPos.x = Math.floor((Math.random() * canvas.width)); //Random number from zero to canvas.width
       currPos.y = Math.floor((Math.random() * canvas.height));
 
       var resource = new Resource(resourceValue);
@@ -296,20 +356,26 @@ function initResources(stage, canvas){
       resource.add(stage);
       resources.push(resource);
    }
+
    return resources;
 }
+
+//Create an object to represent the background and register pathfinding events
 function initBackground(stage, canvas){
    var color = "green";
    var width = canvas.width;
    var height = canvas.height;
-   //var background = new Rectangle(new createjs.Shape(), color, width, height, {x: canvas.width/2, y: canvas.height/2});
-   var background = new Circle(new createjs.Shape(),color,1000, {x: width/2, y: width/2});
+
+   //TODO convert the background to a working Rectangle
+   //var background = new Rectangle({x: canvas.width/2, y: canvas.height/2}, color, width, height);
+   var background = new Circle( {x: width/2, y: width/2}, color, 1000);
    background.add(stage);
 
    return background;
 
 }
 
+//Create desired Joysticks for the user
 function initJoysticks(stage){
    var canvas = document.getElementById("mainCanvas");
    //var right  = new Joystick({x:canvas.width - canvas.width/6, y: canvas.height/2});
@@ -322,9 +388,52 @@ function initJoysticks(stage){
    return {left: left};
 }
 
-//Inits a player with a joystick
+//Creates a player and associates it to a joystick
 function initPlayer(stage, stick){
    player = new Player(stick);
    player.add(stage);
    return player;
+}
+
+
+//Initialize A* pathfinding with easystar libary
+function initPathfinding(world, player, background){
+
+   var easystar = new EasyStar.js();
+   easystar.setGrid(world);
+   easystar.setAcceptableTiles([0]); //tiles we're able to walk on
+   easystar.enableDiagonals(); 
+   
+   //Generate path when background is clicked
+   background.getEaselShape().on("click", function(e){
+         var pos = player.getPos();
+         
+         easystar.findPath(Math.floor(pos.x), Math.floor(pos.y), 
+                           Math.floor(e.stageX), Math.floor(e.stageY), 
+                           function(path){ 
+              if( path === null) {
+                  console.log("Path not found");
+              }
+              else{
+
+                  //By default, easystar produces paths of very high resolution
+                  //The code which updates the player's position in order to follow this path
+                  //can only move one position per tick. In order to speed up the player
+                  //either ticks must go faster, or the path has to have less elements without looking
+                  //choppy. The code below attempts the latter.
+
+                  //Remove every fourth element of the path 
+                  for(var i = 0; i < path.length; i++)
+                  {
+                     if((i%2) === 0)
+                     {
+                        path.splice(i,2); //remove i from path
+                        i++;
+                     }
+                  }
+                  player.path = path;
+              }
+         });
+   });
+   return easystar;
 }
