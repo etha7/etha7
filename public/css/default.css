@@ -2,6 +2,11 @@
 float: none
 }
 
+#bottom-buttonContainer {
+    position:absolute;
+    bottom: 10px; 
+}
+
 /* applies to anything of class "example-class-selector" */
 .example-class-selector {
 	margin-top: 2em;

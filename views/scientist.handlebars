@@ -17,6 +17,7 @@
     <!-- Custom CSS -->
     <link href="css/style.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -24,28 +25,90 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+
+   
  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
       google.charts.load('current', {'packages':['corechart']});
-      google.charts.setOnLoadCallback(drawChart);
+      google.charts.setOnLoadCallback(drawRiskChart);
 
-      function drawChart() {
+
+    
+  
+      function drawRiskChart() {
         var data = google.visualization.arrayToDataTable([
-          ['Year', 'Sales', 'Expenses'],
-          ['2004',  1000,      400],
-          ['2005',  1170,      460],
-          ['2006',  660,       1120],
-          ['2007',  1030,      540]
+          ['Percent Chance of Sickness', ''],
+          ['5%',  1000],
+          ['10%',  1170],
+          ['15%',  660],
+          ['20%',  1030]
         ]);
 
         var options = {
-          title: 'Company Performance',
+          title: 'Risk vs Reward',
           curveType: 'function',
+          vAxis: {
+           title: 'Number of Resources Gathered',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
+          hAxis: {
+           title: 'Percent Chance of Infection',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
           legend: { position: 'bottom' }
         };
-
         var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+      function drawTrustChart() {
+        var data = google.visualization.arrayToDataTable([
+          ['Percent Chance of Sickness', ''],
+          ['5%',  78],
+          ['10%',  56],
+          ['15%',  34],
+          ['20%',  12]]);
 
+
+        var options = {
+          title: 'Trust',
+          curveType: 'function',
+                    vAxis: {
+          title: 'Percent of People who Team Up',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
+          hAxis: {
+           title: 'Percent Chance of Infection',
+           titleTextStyle: {
+            color: '#FF0000'
+             }
+          },
+          legend: { position: 'bottom' }
+        };
+        var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+        chart.draw(data, options);
+      }
+      function drawMoralityChart() {
+         // Create the data table.
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Title');
+        data.addColumn('number', 'Percent sick');
+        data.addRows([
+          ['Percent Sick and Alone', 3],
+          ['Percent Sick and on Team', 1]
+        ]);
+
+        // Set chart options
+        var options = {'title':'Morality',
+                       'width':400,
+                       'height':300
+                     };
+        var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
         chart.draw(data, options);
       }
     </script>
@@ -59,10 +122,16 @@
         <div id="sidebar-wrapper">
             <ul class="sidebar-nav">
                 <li>
-                    <a href="#">Home</a>
+                    <a href="/">Home</a>
                 </li>
                 <li>
-                    <a href="#">Risk Graph</a>
+                    <a href="/scientist" id="Risk">Risk Graph</a>
+                </li>
+                <li>
+                    <a href="/scientist" id="Trust">Trust Graph</a>
+                </li>
+                <li>
+                    <a href="/scientist" id="Morality">Morality Graph</a>
                 </li>
             </ul>
         </div>
@@ -72,17 +141,24 @@
         <div id="page-content-wrapper">
             <div class="container-fluid">
                 <div class="row">
+                <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
                     <div class="col-lg-12">
                         <h1>Disease.io Data Center</h1>
+                          <h2> Risk vs Reward </h2>
                            <p>Welcome to the Disease.io Data Center! Here, you can find information
                              about human risk. </p>
-                            <p> text text text text </p>
                             <div id="chart_div"></div>
-                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
                     </div>
                 </div>
             </div>
         </div>
+        <!-- TODO ACTUALLY GET DL DATA TO WORK -->
+         <div align="center">
+             <a href="#download-data" class="btn btn-default" id="download-data">Download Data</a>
+         </div>
+         <div id="help">
+             <a href="#help" class="btn btn-default" id="help">Help</a>
+          </div>
         <!-- /#page-content-wrapper -->
 
     </div>
@@ -101,7 +177,37 @@
         $("#wrapper").toggleClass("toggled");
     });
     </script>
-
+    <script>
+    $("#download-data").click(function(e) {
+         e.preventDefault();
+         alert("Files Downloaded!"); 
+         //TODO make download data do something.
+    });
+    </script>
+    <script>
+    $("#help").click(function(e) {
+         e.preventDefault();
+         alert("You are doomed, there is no help as of yet."); 
+         //TODO make help do something.
+    });
+    </script>
+    <script>
+      $("#Risk").click(function(e) {
+        e.preventDefault();
+        google.charts.setOnLoadCallback(drawRiskChart);
+        //drawRiskChart();
+    });
+    $("#Trust").click(function(e) {
+        e.preventDefault();
+        google.charts.setOnLoadCallback(drawTrustChart);
+        //drawTrustChart();
+    });
+    $("#Morality").click(function(e) {
+        e.preventDefault();
+        google.charts.setOnLoadCallback(drawMoralityChart);
+        //drawMoralityChart();
+    });
+    </script>
 </body>
 
 </html>
