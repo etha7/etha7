@@ -26,17 +26,25 @@
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-   
- <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <!--Load the AJAX API-->
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <!--<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
     <script type="text/javascript">
+      // Load the Visualization API and the hart package.
       google.charts.load('current', {'packages':['corechart']});
+      // Set a callback to run when the Google Visualization API is loaded.
       google.charts.setOnLoadCallback(drawRiskChart);
 
 
     
   
       function drawRiskChart() {
-        var data = google.visualization.arrayToDataTable([
+        
+      // Create our data table out of JSON data loaded from server.
+
+
+       var data = google.visualization.arrayToDataTable([
           ['Percent Chance of Sickness', ''],
           ['5%',  1000],
           ['10%',  1170],
@@ -61,8 +69,11 @@
           },
           legend: { position: 'bottom' }
         };
+
         var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
+        chart.draw(data, options);        
+        drawToolbar();
+
       }
       function drawTrustChart() {
         var data = google.visualization.arrayToDataTable([
@@ -92,9 +103,10 @@
         };
         var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
         chart.draw(data, options);
+        drawToolbar();
+
       }
       function drawMoralityChart() {
-         // Create the data table.
         var data = new google.visualization.DataTable();
         data.addColumn('string', 'Title');
         data.addColumn('number', 'Percent sick');
@@ -110,11 +122,30 @@
                      };
         var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
         chart.draw(data, options);
+        drawToolbar();
+
+
       }
+      function drawToolbar() {
+      var components = [
+          {type: 'igoogle', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA',
+           gadget: 'https://www.google.com/ig/modules/pie-chart.xml',
+           userprefs: {'3d': 1}},
+          {type: 'html', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA'},
+          {type: 'csv', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA'},
+          {type: 'htmlcode', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA',
+           gadget: 'https://www.google.com/ig/modules/pie-chart.xml',
+           userprefs: {'3d': 1},
+           style: 'width: 800px; height: 700px; border: 3px solid purple;'}
+      ];
+
+      var container = document.getElementById('toolbar_div');
+      google.visualization.drawToolbar(container, components);
+    };
     </script>
 </head>
 
-<body>
+<body onload="document.getElementById('PageContent').innerHTML=document.getElementById('RiskContent').innerHTML;">
 
     <div id="wrapper">
 
@@ -125,14 +156,15 @@
                     <a href="/index">Home</a>
                 </li>
                 <li>
-                    <a href="/scientist" id="Risk">Risk Graph</a>
+                    <a href="/scientist" id="Risk" onclick="document.getElementById('PageContent').innerHTML=document.getElementById('RiskContent').innerHTML;">Risk Graph</a>
                 </li>
                 <li>
-                    <a href="/scientist" id="Trust">Trust Graph</a>
+                    <a href="/scientist" id="Trust" onclick="document.getElementById('PageContent').innerHTML=document.getElementById('TrustContent').innerHTML;">Trust Graph</a>
                 </li>
                 <li>
-                    <a href="/scientist" id="Morality">Morality Graph</a>
+                    <a href="/scientist" id="Morality" onclick="document.getElementById('PageContent').innerHTML=document.getElementById('MoralityContent').innerHTML;">Morality Graph</a>
                 </li>
+
             </ul>
         </div>
         <!-- /#sidebar-wrapper -->
@@ -142,20 +174,33 @@
             <div class="container-fluid">
                 <div class="row">
                 <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
+                    <h1>Disease.io Data Center</h1>
                     <div class="col-lg-12">
-                        <h1>Disease.io Data Center</h1>
-                          <h2> Risk vs Reward </h2>
-                           <p>Welcome to the Disease.io Data Center! Here, you can find information
-                             about human risk. </p>
-                            <div id="chart_div"></div>
-                    </div>
+                          <div id="PageContent"> </div>
+                          <div id="chart_div"></div>
+                          <div id="toolbar_div"></div>
+                          <div id="RiskContent" style="visibility:hidden;">
+                          {{#each graphs}}
+
+                          <h2>{{title}}</h2>
+                            <p>{{description}}</p>
+                           </div>
+                           {{/each}}
+                            <div id="TrustContent" style="visibility:hidden;">
+                              <h2>Trust</h2>
+                              <p>Welcome to the Disease.io Data Center! Here, you can find information
+                              about trust.</p>
+                            </div>
+                            <div id="MoralityContent" style="visibility:hidden;">
+                              <h2>Morality</h2>
+                                <p>Welcome to the Disease.io Data Center! Here, you can find information
+                                about morality.</p>
+                            </div>
+                        </div>
                 </div>
             </div>
         </div>
-        <!-- TODO ACTUALLY GET DL DATA TO WORK -->
-         <div align="center">
-             <a href="#download-data" class="btn btn-default" id="download-data">Download Data</a>
-         </div>
+        
          <div id="help">
              <a href="#help" class="btn btn-default" id="help">Help</a>
           </div>
@@ -177,13 +222,7 @@
         $("#wrapper").toggleClass("toggled");
     });
     </script>
-    <script>
-    $("#download-data").click(function(e) {
-         e.preventDefault();
-         alert("Files Downloaded!"); 
-         //TODO make download data do something.
-    });
-    </script>
+   
     <script>
     $("#help").click(function(e) {
          e.preventDefault();
