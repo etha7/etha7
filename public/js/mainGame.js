@@ -12,8 +12,8 @@ function main(){
    var background   = initBackground(stage, canvas);
    
    //Initalize the game controls and player
-   var left         = initJoysticks(stage).left;
-   var player       = initPlayer(stage, left);
+   var leftJoystick = initJoysticks(stage).left;
+   var player       = initPlayer(stage, leftJoystick);
        player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
    var teamButton   = initTeamButton(stage, player);
 
@@ -31,6 +31,15 @@ function main(){
    window.addEventListener("resize", function(){
       stage.canvas.width  = window.innerWidth;
       stage.canvas.height = window.innerHeight;
+      background.width    = window.innerWidth;
+      background.height   = window.innerHeight;
+      background.draw();
+
+      //TODO encapsulate these offsets within Joystick and TeamButton
+      leftJoystick.setPos({x: window.innerWidth/6, y: window.innerHeight/2});
+      teamButton.setPos({x: window.innerWidth - window.innerWidth/6, y: window.innerHeight/2});
+
+
    }, false);
    
    //Main game loop
@@ -141,6 +150,7 @@ function Rectangle(pos, color, width, height){
    
    //Draw the rectangle
    this.draw = function(){
+      this.easelShape.graphics.clear();
       this.getEaselShape().graphics.beginFill(this.color).drawRect(0, 0, this.width, this.height);
    }
    this.draw();
@@ -292,6 +302,10 @@ function Joystick(pos){
    });
    
    this.getPos = function() { return this.stick.getPos()};
+   this.setPos = function(pos) {
+      this.base.setPos(pos);
+      this.stick.setPos(pos);
+   }
 
    //Get the direction the joystick is pointing
    this.getDirection = function(){
@@ -438,11 +452,7 @@ function initTeamButton(stage, player){
 
    //Put button at right of joystick
    var buttonPos = {x: stage.canvas.width - stage.canvas.width/6, y: stage.canvas.height/2};
-   var circ = new Circle(buttonPos, "grey", 30);
-   circ.add(stage);
    var teamButton = new TeamButton(buttonPos, "grey", player);
-
-   console.log(teamButton.getPos());
    teamButton.add(stage);
 
    return teamButton;

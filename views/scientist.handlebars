@@ -180,21 +180,24 @@
                           <div id="chart_div"></div>
                           <div id="toolbar_div"></div>
                           <div id="RiskContent" style="visibility:hidden;">
-                          {{#each graphs}}
-
-                          <h2>{{title}}</h2>
-                            <p>{{description}}</p>
+                          {{#if riskGraph}}
+                          <h2>{{riskGraph.riskTitle}}</h2>
+                            <p>{{riskGraph.riskDescription}}</p>
                            </div>
-                           {{/each}}
+                           {{/if}}
                             <div id="TrustContent" style="visibility:hidden;">
-                              <h2>Trust</h2>
-                              <p>Welcome to the Disease.io Data Center! Here, you can find information
-                              about trust.</p>
+                            {{#if trustGraph}}
+                          <h2>{{trustGraph.trustTitle}}</h2>
+                            <p>{{trustGraph.trustDescription}}</p>
+                           </div>
+                           {{/if}}
                             </div>
                             <div id="MoralityContent" style="visibility:hidden;">
-                              <h2>Morality</h2>
-                                <p>Welcome to the Disease.io Data Center! Here, you can find information
-                                about morality.</p>
+                           {{#if moralityGraph}}
+                          <h2>{{moralityGraph.moralityTitle}}</h2>
+                            <p>{{moralityGraph.moralityDescription}}</p>
+                           </div>
+                           {{/if}}
                             </div>
                         </div>
                 </div>
