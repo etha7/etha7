@@ -17,4 +17,13 @@ function initializePage() {
  $("#citizenButton").click(function(e) {
         window.location.href = "/citizen";
                                        });
+ $("#mapButton").click(function(e) {
+        window.location.href = "/map";
+                                       });
+ $("#loginButton").click(function(e) {
+        window.location.href = "/index";
+                                       });
+ $("#cancelButton").click(function(e) {
+        window.location.href = "/index";
+                                       });
 }
