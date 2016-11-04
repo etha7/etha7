@@ -29,6 +29,7 @@
     <!--Load the AJAX API-->
 
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <!--<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
     <script type="text/javascript">
       // Load the Visualization API and the hart package.
       google.charts.load('current', {'packages':['corechart']});
@@ -39,7 +40,11 @@
     
   
       function drawRiskChart() {
-        var data = google.visualization.arrayToDataTable([
+        
+      // Create our data table out of JSON data loaded from server.
+
+
+       var data = google.visualization.arrayToDataTable([
           ['Percent Chance of Sickness', ''],
           ['5%',  1000],
           ['10%',  1170],
@@ -64,6 +69,7 @@
           },
           legend: { position: 'bottom' }
         };
+
         var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
         chart.draw(data, options);        
         drawToolbar();
@@ -173,23 +179,24 @@
                           <div id="PageContent"> </div>
                           <div id="chart_div"></div>
                           <div id="toolbar_div"></div>
-
                           <div id="RiskContent" style="visibility:hidden;">
-                          <h2>Risk vs Reward</h2>
-                            <p>Welcome to the Disease.io Data Center! Here, you can find information
-                             about human risk.</p>
+                          {{#each graphs}}
+
+                          <h2>{{title}}</h2>
+                            <p>{{description}}</p>
+                           </div>
+                           {{/each}}
+                            <div id="TrustContent" style="visibility:hidden;">
+                              <h2>Trust</h2>
+                              <p>Welcome to the Disease.io Data Center! Here, you can find information
+                              about trust.</p>
+                            </div>
+                            <div id="MoralityContent" style="visibility:hidden;">
+                              <h2>Morality</h2>
+                                <p>Welcome to the Disease.io Data Center! Here, you can find information
+                                about morality.</p>
+                            </div>
                         </div>
-                        <div id="TrustContent" style="visibility:hidden;">
-                          <h2>Trust</h2>
-                          <p>Welcome to the Disease.io Data Center! Here, you can find information
-                             about trust.</p>
-                        </div>
-                        <div id="MoralityContent" style="visibility:hidden;">
-                          <h2>Morality</h2>
-                            <p>Welcome to the Disease.io Data Center! Here, you can find information
-                             about morality.</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
