@@ -15,6 +15,7 @@ function main(){
    var left         = initJoysticks(stage).left;
    var player       = initPlayer(stage, left);
        player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
+   var teamButton   = initTeamButton(stage, player);
 
    //Initialize array of resource objects and resource text
    var resources    = initResources(stage, canvas);
@@ -32,7 +33,6 @@ function main(){
       stage.canvas.height = window.innerHeight;
    }, false);
    
-
    //Main game loop
    var FPS = 50;
    createjs.Ticker.setFPS(FPS);
@@ -73,15 +73,10 @@ Array.prototype.equals = function( array ) {
 //Class definitions:------------------------------------------------
 
 //Base class for all primitive objects that get drawn
-function easelObject(pos, color){
+function EaselObject( pos, color){
 
    this.easelShape = new createjs.Shape();
    this.getEaselShape = function(){ return this.easelShape; };
-
-   this.test = function(pos) { this.getEaselShape().x = pos.x; this.getEaselShape().y = pos.y;};
-   this.test({x: 10, y: 11});
-   console.log(this.getEaselShape().x);
-   console.log(this.getEaselShape().y);
 
    //Set initial position
    this.easelShape.x = pos.x;
@@ -109,40 +104,76 @@ function easelObject(pos, color){
 //A class for representing circles
 function Circle(pos, color, radius ){
    //Call constructor of superclass
-   easelObject.call(this, pos, color);  
+   EaselObject.call(this, pos, color);  
 
    //Set the new radius
    this.radius = radius;
 
-   //Determines if circle is dotted outline
-   this.isDotted = false;
-   this.invertIsDotted = function(){ this.isDotted = !this.isDotted;}
-
    //Function: draw a circle
    this.draw = function(){
+      this.easelShape.graphics.clear();
       this.easelShape.graphics.beginFill(this.color).drawCircle(0,0,this.radius);
    }
+
    //Function: draw a dotted circle
    this.drawDotted = function(){
-      this.easelShape.graphics.setStrokeDash([2,2]);
-      this.easelShape.setStrokeStyle(2).beginsStroke("grey").drawCircle(0,0,this.radius);
+      this.easelShape.graphics.clear();
+
+      //20 pixel lines with 5 pixel gaps
+      this.easelShape.graphics.setStrokeDash([20,5]);
+      this.easelShape.graphics.setStrokeStyle(2).beginStroke(this.color).drawCircle(0,0,this.radius);
    }
     
-   //Actually draw the circle
-   if(this.isDotted === true)
-      this.drawDotted();
-   else
-      this.draw();
+   this.draw();
+}
+
+function Rectangle(pos, color, width, height){
+   EaselObject.call(this, pos, color);
+
+   this.width  = width;
+   this.height = height;
+
+
+   //Easel.js draws rectangles using coordinates representing the rectangle's upper left corner
+   //The position offsets here draw the rectangle such that pos represents the center if it. 
+   this.easelShape.x -=  this.width/2
+   this.easelShape.y -=  this.height/2
+   
+   //Draw the rectangle
+   this.draw = function(){
+      this.getEaselShape().graphics.beginFill(this.color).drawRect(0, 0, this.width, this.height);
+   }
+   this.draw();
+
 }
 
 function Resource(value){
-   Circle.call(this, {x: 0, y: 0}, "blue", 10);
+   Circle.call(this, {x: 0, y: 0}, "white", 10);
    this.value = value;
 }
 
 function DiseaseZone(playerPos){
-   Circle.call(this, playerPos, "grey", 30);
-   this.invertIsDotted();
+   Circle.call(this, playerPos, "red", 75);
+   this.drawDotted();
+   this.AllowsTeams = false;
+
+   //Inverts whether the diseaseZone allows teams
+   //TODO make property of player
+   this.invertAllowsTeams = function(){
+
+     //Set to not allow teams
+     if(this.AllowsTeams === true){
+        this.color = "red";
+        this.drawDotted();
+     }
+     else
+     {
+        this.color = "green";
+        this.drawDotted();
+     }
+     this.AllowsTeams = !this.AllowsTeams;
+   };
+   
 }
 
 function Camera(pos, width, height){
@@ -156,10 +187,6 @@ function Camera(pos, width, height){
    this.getHeight = function(){return this.height;};
    this.setHeight = function(height) {this.height = height;};
 }
-
-
-
-
 
 function Player(joystick){
    Circle.call( this, {x: canvas.width/2, y: canvas.height/2}, "red", 20);
@@ -190,8 +217,16 @@ function Player(joystick){
    var parentSetPos = this.setPos;
    this.setPos = function(pos){ 
        this.camera.setPos(pos);
+       this.diseaseZone.setPos(pos);
        parentSetPos.call(this, pos); //need call so 'this' is defined as the current Player
    };
+
+   //Override inherited add
+   var parentAdd = this.add;
+   this.add = function(stage){
+      this.diseaseZone.add(stage);
+      parentAdd.call(this, stage);
+   }
       
    
    //Update player's location with respect to joystick
@@ -228,36 +263,7 @@ function Player(joystick){
    }
 }
 
-
-
-//Dragable Class: Makes objects Dragable
-function Dragable(pos, color){
-
-   //Call superclass's constructor
-   EaselObject.call(this, pos, color);
-
-   //Update coordinates while object is moved while pressed
-   this.getEaselShape().on("pressmove", function(e){
-      e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
-      e.target.y = e.stageY;
-   });
-
-};
-
-
-function Rectangle(pos, color, width, height){
-   EaselObject.call(this, pos, color);
-   this.width  = width;
-   this.height = height;
-
-   //Draw the rectangle
-   this.draw = function(){
-      this.shape.graphics.beginFill(this.color).drawRect(center.x,center.y,this.width, this.height);
-   }
-   this.draw();
-
-}
-
+//Controls ---------------------------------------------------------
 
 //Creates a Joystick at the given location
 function Joystick(pos){
@@ -313,6 +319,38 @@ function Joystick(pos){
 
 }
 
+//Button for opting in or out of teams
+function TeamButton(pos, color, player){
+
+   //TODO make baseSize some kind of global variable
+   var baseSize = 35;
+   Circle.call(this, pos, color, baseSize);
+
+   this.player = player;
+
+   this.getEaselShape().on("click", function(e){
+      player.diseaseZone.invertAllowsTeams();
+   });
+}
+//Controls ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//Dragable Class: Makes objects Dragable
+function Dragable(pos, color){
+
+   //Call superclass's constructor
+   EaselObject.call(this, pos, color);
+
+   //Update coordinates while object is moved while pressed
+   this.getEaselShape().on("pressmove", function(e){
+      e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
+      e.target.y = e.stageY;
+   });
+
+};
+
+
+
+
 //Class definitions:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //Creates a square world of size 1000 that our pathfinding algorithm can use
@@ -330,7 +368,7 @@ function initWorld(){
 
 //Creates and displayes the Resources: x text
 function initResourceText(stage, canvas, player){
-   resourceText = new createjs.Text("Resources: "+player.getResources(), "20px Arial", "#000000");
+   resourceText = new createjs.Text("Resources: "+player.getResources(), "20px Arial", "white");
    resourceText.x = 0;
    resourceText.y = canvas.height/12; //TODO more logically position Resources text
    resourceText.textBaseline = "alphabet"; //Not sure what this setting does
@@ -362,13 +400,13 @@ function initResources(stage, canvas){
 
 //Create an object to represent the background and register pathfinding events
 function initBackground(stage, canvas){
-   var color = "green";
+   var color = "black";
    var width = canvas.width;
    var height = canvas.height;
 
-   //TODO convert the background to a working Rectangle
-   //var background = new Rectangle({x: canvas.width/2, y: canvas.height/2}, color, width, height);
-   var background = new Circle( {x: width/2, y: width/2}, color, 1000);
+   
+   
+   var background = new Rectangle( {x: width/2, y: height/2}, color, width, height);
    background.add(stage);
 
    return background;
@@ -395,6 +433,20 @@ function initPlayer(stage, stick){
    return player;
 }
 
+//Creates a button that allows users to opt in or out of teams
+function initTeamButton(stage, player){
+
+   //Put button at right of joystick
+   var buttonPos = {x: stage.canvas.width - stage.canvas.width/6, y: stage.canvas.height/2};
+   var circ = new Circle(buttonPos, "grey", 30);
+   circ.add(stage);
+   var teamButton = new TeamButton(buttonPos, "grey", player);
+
+   console.log(teamButton.getPos());
+   teamButton.add(stage);
+
+   return teamButton;
+}
 
 //Initialize A* pathfinding with easystar libary
 function initPathfinding(world, player, background){
