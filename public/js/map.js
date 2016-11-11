@@ -1,8 +1,69 @@
 var canvas = document.getElementById("mainCanvas");
+var homebutton = document.getElementById("home-button");
+var canvasLeft = canvas.offsetLeft,
+    canvasTop = canvas.offsetTop;
 var context = canvas.getContext("2d");
+var clickableElements = [];
+
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight; 
-main();
+
+mapMain();
+
+function mapMain(){
+       //Initialize the game world
+   var stage        = new createjs.Stage("mainCanvas")
+   
+     //Enable touch based interface for mobile devices
+   createjs.Touch.enable(stage);
+
+   //Resize canvas on window resize   
+   window.addEventListener('click', function(event) {
+    var x = event.pageX - canvasLeft,
+        y = event.pageY - canvasTop;
+     //Collision detection between clicked offset and element.
+    clickableElements.forEach(function(element) {
+        if (y > element.top && y < element.top + element.height 
+            && x > element.left && x < element.left + element.width) {
+            //alert('clicked an element');
+            //element.clicked(stage);
+        }
+    });
+}, false)
+
+
+   //Resize canvas on window resize   
+   window.addEventListener("resize", function(){
+      stage.canvas.width  = window.innerWidth;
+      stage.canvas.height = window.innerHeight;
+   }, false);
+   
+   //Main game loop
+   var FPS = 50;
+   createjs.Ticker.setFPS(FPS);
+   createjs.Ticker.addEventListener("tick", function(){
+      //Commit all updates to actual stage/canvas
+      stage.update();
+
+   });
+   
+   var world        = initWorld();
+   var background   = initBackground(stage, canvas);
+   
+   //function initText(stage, canvas, text, color, xpos, ypos){
+   
+   var helpText1 = initText(stage, canvas, "The location you have selected is represented", "blue", canvas.width/3, canvas.height/10);
+   var helpText2 = initText(stage, canvas, "as a blue dot, click elsewhere to move selected position", "blue", canvas.width/3, canvas.height/8);
+   var citySelectionText = initCitySelectionText(stage,canvas);
+   citySelectionText.color = "green";
+   var safeCity = new City({x: canvas.width/6, y: canvas.height/2}, "green", stage, "Safe", citySelectionText);
+   safeCity.add();
+   clickableElements.push(safeCity);
+   var riskCity = new City({x: (5 * canvas.width)/6, y: canvas.height/2}, "red", stage, "Risky", citySelectionText);
+   riskCity.add();
+   clickableElements.push(riskCity);
+   
+}
 
 
 function main(){
@@ -12,10 +73,9 @@ function main(){
    var background   = initBackground(stage, canvas);
    
    //Initalize the game controls and player
-   var leftJoystick = initJoysticks(stage).left;
-   var player       = initPlayer(stage, leftJoystick);
+   var left         = initJoysticks(stage).left;
+   var player       = initPlayer(stage, left);
        player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
-   var teamButton   = initTeamButton(stage, player);
 
    //Initialize array of resource objects and resource text
    var resources    = initResources(stage, canvas);
@@ -31,17 +91,9 @@ function main(){
    window.addEventListener("resize", function(){
       stage.canvas.width  = window.innerWidth;
       stage.canvas.height = window.innerHeight;
-      background.width    = window.innerWidth;
-      background.height   = window.innerHeight;
-      background.draw();
-
-      //TODO encapsulate these offsets within Joystick and TeamButton
-      leftJoystick.setPos({x: window.innerWidth/6, y: window.innerHeight/2});
-      teamButton.setPos({x: window.innerWidth - window.innerWidth/6, y: window.innerHeight/2});
-
-
    }, false);
    
+
    //Main game loop
    var FPS = 50;
    createjs.Ticker.setFPS(FPS);
@@ -82,10 +134,15 @@ Array.prototype.equals = function( array ) {
 //Class definitions:------------------------------------------------
 
 //Base class for all primitive objects that get drawn
-function EaselObject( pos, color){
+function easelObject(pos, color){
 
    this.easelShape = new createjs.Shape();
    this.getEaselShape = function(){ return this.easelShape; };
+
+   this.test = function(pos) { this.getEaselShape().x = pos.x; this.getEaselShape().y = pos.y;};
+   this.test({x: 10, y: 11});
+   console.log(this.getEaselShape().x);
+   console.log(this.getEaselShape().y);
 
    //Set initial position
    this.easelShape.x = pos.x;
@@ -109,81 +166,65 @@ function EaselObject( pos, color){
       stage.removeChild(this.getEaselShape());
    };
 }
+function Rectangle(pos, color, width, height){
+   easelObject.call(this, pos, color);
+   
+   this.width  = width;
+   this.height = height;
+   this.top = pos.y;
+   this.left = pos.x;
+   
+   //Draw the rectangle
+   this.draw = function(){
+      this.shape.graphics.beginFill(this.color).drawRect(this.left,this.top,this.width, this.height);
+   }
+   this.draw();
+
+}
 
 //A class for representing circles
 function Circle(pos, color, radius ){
    //Call constructor of superclass
-   EaselObject.call(this, pos, color);  
+   easelObject.call(this, pos, color);  
 
    //Set the new radius
    this.radius = radius;
 
+   //All of these elements are currently being used to check whether something has been clicked on or not.
+   this.top = pos.y - radius;
+   this.left = pos.x - radius;
+   this.height = 2*radius;
+   this.width = 2*radius;
+   
+   //Determines if circle is dotted outline
+   this.isDotted = false;
+   this.invertIsDotted = function(){ this.isDotted = !this.isDotted;}
+
    //Function: draw a circle
    this.draw = function(){
-      this.easelShape.graphics.clear();
       this.easelShape.graphics.beginFill(this.color).drawCircle(0,0,this.radius);
    }
-
    //Function: draw a dotted circle
    this.drawDotted = function(){
-      this.easelShape.graphics.clear();
-
-      //20 pixel lines with 5 pixel gaps
-      this.easelShape.graphics.setStrokeDash([20,5]);
-      this.easelShape.graphics.setStrokeStyle(2).beginStroke(this.color).drawCircle(0,0,this.radius);
+      this.easelShape.graphics.setStrokeDash([2,2]);
+      this.easelShape.setStrokeStyle(2).beginsStroke("grey").drawCircle(0,0,this.radius);
    }
     
-   this.draw();
-}
-
-function Rectangle(pos, color, width, height){
-   EaselObject.call(this, pos, color);
-
-   this.width  = width;
-   this.height = height;
-
-
-   //Easel.js draws rectangles using coordinates representing the rectangle's upper left corner
-   //The position offsets here draw the rectangle such that pos represents the center if it. 
-   this.easelShape.x -=  this.width/2
-   this.easelShape.y -=  this.height/2
-   
-   //Draw the rectangle
-   this.draw = function(){
-      this.easelShape.graphics.clear();
-      this.getEaselShape().graphics.beginFill(this.color).drawRect(0, 0, this.width, this.height);
-   }
-   this.draw();
-
+   //Actually draw the circle
+   if(this.isDotted === true)
+      this.drawDotted();
+   else
+      this.draw();
 }
 
 function Resource(value){
-   Circle.call(this, {x: 0, y: 0}, "white", 10);
+   Circle.call(this, {x: 0, y: 0}, "blue", 10);
    this.value = value;
 }
 
 function DiseaseZone(playerPos){
-   Circle.call(this, playerPos, "red", 75);
-   this.drawDotted();
-   this.AllowsTeams = false;
-
-   //Inverts whether the diseaseZone allows teams
-   //TODO make property of player
-   this.invertAllowsTeams = function(){
-
-     //Set to not allow teams
-     if(this.AllowsTeams === true){
-        this.color = "red";
-        this.drawDotted();
-     }
-     else
-     {
-        this.color = "green";
-        this.drawDotted();
-     }
-     this.AllowsTeams = !this.AllowsTeams;
-   };
-   
+   Circle.call(this, playerPos, "grey", 30);
+   this.invertIsDotted();
 }
 
 function Camera(pos, width, height){
@@ -197,6 +238,10 @@ function Camera(pos, width, height){
    this.getHeight = function(){return this.height;};
    this.setHeight = function(height) {this.height = height;};
 }
+
+
+
+
 
 function Player(joystick){
    Circle.call( this, {x: canvas.width/2, y: canvas.height/2}, "red", 20);
@@ -227,16 +272,8 @@ function Player(joystick){
    var parentSetPos = this.setPos;
    this.setPos = function(pos){ 
        this.camera.setPos(pos);
-       this.diseaseZone.setPos(pos);
        parentSetPos.call(this, pos); //need call so 'this' is defined as the current Player
    };
-
-   //Override inherited add
-   var parentAdd = this.add;
-   this.add = function(stage){
-      this.diseaseZone.add(stage);
-      parentAdd.call(this, stage);
-   }
       
    
    //Update player's location with respect to joystick
@@ -273,7 +310,22 @@ function Player(joystick){
    }
 }
 
-//Controls ---------------------------------------------------------
+
+
+//Dragable Class: Makes objects Dragable
+function Dragable(pos, color){
+
+   //Call superclass's constructor
+   EaselObject.call(this, pos, color);
+
+   //Update coordinates while object is moved while pressed
+   this.getEaselShape().on("pressmove", function(e){
+      e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
+      e.target.y = e.stageY;
+   });
+
+};
+
 
 //Creates a Joystick at the given location
 function Joystick(pos){
@@ -281,7 +333,7 @@ function Joystick(pos){
    this.pos = pos;
 
    this.baseSize = 35;
-   this.baseColor = "grey";
+   this.baseColor = "red";
    this.base = new Circle(this.pos, this.baseColor, this.baseSize);
 
    this.stickSize = 25;
@@ -302,10 +354,6 @@ function Joystick(pos){
    });
    
    this.getPos = function() { return this.stick.getPos()};
-   this.setPos = function(pos) {
-      this.base.setPos(pos);
-      this.stick.setPos(pos);
-   }
 
    //Get the direction the joystick is pointing
    this.getDirection = function(){
@@ -333,36 +381,68 @@ function Joystick(pos){
 
 }
 
-//Button for opting in or out of teams
-function TeamButton(pos, color, player){
 
-   //TODO make baseSize some kind of global variable
-   var baseSize = 35;
-   Circle.call(this, pos, color, baseSize);
+//Creates a City at the given location
+function City(pos, baseColor, stage, type, citySelectionText){
+   this.pos = pos;
+   
+   this.stage = stage;
+   
+   this.cityType = type;
+   this.citySelectionText = citySelectionText;
+   
+   this.baseSize = 35;
+   this.baseColor = baseColor;
+   this.base = new Circle(this.pos, this.baseColor, this.baseSize);
 
-   this.player = player;
+   if(type === "Safe") {
+      this.stickSize = 25;
+      this.stickColor = "blue";
+      this.stick =  new Circle(this.pos, this.stickColor, this.stickSize);
+   } else { 
+      this.stickSize = 25;
+      this.stickColor = baseColor;
+      this.stick =  new Circle(this.pos, this.stickColor, this.stickSize);
+   }
+   
 
-   this.getEaselShape().on("click", function(e){
-      player.diseaseZone.invertAllowsTeams();
+   this.top = pos.y;
+   this.left = pos.x;
+   this.height = this.baseSize;
+   this.width = this.baseSize;
+
+   this.base.getEaselShape().on("click", function(e){
+        clickableElements.forEach(function(element) {
+          element.unselected(stage);
+        });
+        var stickSize = 25;
+        var stickColor = "blue";
+        var stick =  new Circle(pos, stickColor, stickSize);
+        citySelectionText.text = "City Selection: " + type;
+        citySelectionText.color = baseColor;
+        stage.addChild(stick.getEaselShape());
+        stage.update();
    });
+   
+   this.unselected = function(stage){
+        this.stickSize = 26;
+        this.stickColor = baseColor;
+        this.stick =  new Circle(this.pos, this.stickColor, this.stickSize);
+        stage.addChild(this.stick.getEaselShape());
+        stage.update();
+   }
+   
+   this.getPos = function() { return this.stick.getPos()};
+
+   this.getCityType = function() {return this.cityType};
+   this.getCitySelectionText = function() {return this.citySelectionText};
+
+   this.add = function(){
+      this.stage.addChild(this.base.getEaselShape());
+      this.stage.addChild(this.stick.getEaselShape());
+      this.stage.update();
+   }
 }
-//Controls ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-//Dragable Class: Makes objects Dragable
-function Dragable(pos, color){
-
-   //Call superclass's constructor
-   EaselObject.call(this, pos, color);
-
-   //Update coordinates while object is moved while pressed
-   this.getEaselShape().on("pressmove", function(e){
-      e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
-      e.target.y = e.stageY;
-   });
-
-};
-
-
 
 
 //Class definitions:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -380,15 +460,42 @@ function initWorld(){
    return world;
 }
 
+function initText(stage, canvas, text, color, xpos, ypos){
+   var newText = new createjs.Text(text, "20px Arial", color);
+   newText.x = xpos;
+   newText.y = ypos; //TODO more logically position Resources text
+   newText.textBaseline = "alphabet"; //Not sure what this setting does
+   stage.addChild(newText);
+   return newText;
+}
+
+function initHelpText(stage, canvas){
+   resourceText = new createjs.Text("The city you have selected is represented as a blue dot", "20px Arial", "blue");
+   resourceText.x = 0;
+   resourceText.y = canvas.height/6; //TODO more logically position Resources text
+   resourceText.textBaseline = "alphabet"; //Not sure what this setting does
+   stage.addChild(resourceText);
+   return resourceText;
+}
+
 //Creates and displayes the Resources: x text
-function initResourceText(stage, canvas, player){
-   resourceText = new createjs.Text("Resources: "+player.getResources(), "20px Arial", "white");
+function initResourceText(stage, canvas){
+   resourceText = new createjs.Text("Resources: 0", "20px Arial", "#00FFFF");
    resourceText.x = 0;
    resourceText.y = canvas.height/12; //TODO more logically position Resources text
    resourceText.textBaseline = "alphabet"; //Not sure what this setting does
    stage.addChild(resourceText);
    return resourceText;
+}
 
+//Creates and displayes the City Selection: x text
+function initCitySelectionText(stage, canvas){
+   resourceText = new createjs.Text("City Selection: Safe", "20px Arial", "#00FFFF");
+   resourceText.x = 0;
+   resourceText.y = canvas.height/12; //TODO more logically position Resources text
+   resourceText.textBaseline = "alphabet"; //Not sure what this setting does
+   stage.addChild(resourceText);
+   return resourceText;
 }
 
 //Creates an array of randomly placed Resources on the stage
@@ -418,9 +525,9 @@ function initBackground(stage, canvas){
    var width = canvas.width;
    var height = canvas.height;
 
-   
-   
-   var background = new Rectangle( {x: width/2, y: height/2}, color, width, height);
+   //TODO convert the background to a working Rectangle
+   //var background = new Rectangle({x: canvas.width/2, y: canvas.height/2}, color, width, height);
+   var background = new Circle( {x: width/2, y: width/2}, color, 2000);
    background.add(stage);
 
    return background;
@@ -440,6 +547,19 @@ function initJoysticks(stage){
    return {left: left};
 }
 
+//Create desired Cities for the user
+function initCity(stage){
+   var canvas = document.getElementById("mainCanvas");
+   //var right  = new Joystick({x:canvas.width - canvas.width/6, y: canvas.height/2});
+   var left = new City({x: canvas.width/6, y: canvas.height/2});
+
+   //Add to canvas
+   //right.add(stage);
+   left.add(stage);
+
+   return {left: left};
+}
+
 //Creates a player and associates it to a joystick
 function initPlayer(stage, stick){
    player = new Player(stick);
@@ -447,16 +567,6 @@ function initPlayer(stage, stick){
    return player;
 }
 
-//Creates a button that allows users to opt in or out of teams
-function initTeamButton(stage, player){
-
-   //Put button at right of joystick
-   var buttonPos = {x: stage.canvas.width - stage.canvas.width/6, y: stage.canvas.height/2};
-   var teamButton = new TeamButton(buttonPos, "grey", player);
-   teamButton.add(stage);
-
-   return teamButton;
-}
 
 //Initialize A* pathfinding with easystar libary
 function initPathfinding(world, player, background){

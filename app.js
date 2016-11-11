@@ -12,6 +12,8 @@ var handlebars = require('express3-handlebars')
 var index   = require('./routes/index');
 var scientist = require('./routes/scientist');
 var citizen = require('./routes/citizen');
+var map = require('./routes/map');
+var login = require('./routes/login');
 
 var app = express();
 
@@ -36,9 +38,11 @@ if ('development' == app.get('env')) {
 }
 
 // Add routes here
-app.get('/', index.view);
+app.get('/', login.view);
 app.get('/scientist', scientist.view);
 app.get('/citizen', citizen.view);
+app.get('/map', map.view);
+app.get('/index', index.view);
 
 //app.get('/science/:role', science.view);
 // Example route
