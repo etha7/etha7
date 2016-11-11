@@ -53,7 +53,7 @@
         
       // Create our data table out of JSON data loaded from server.
       var jsonData = $.ajax({
-          url: "json/riskData.json",
+          url: "json/mapGraph.json",
           dataType: "json",
           async: false
           }).responseText;
@@ -72,7 +72,7 @@
         */
         var data = new google.visualization.DataTable(jsonData);
 
-        var options = {
+        /*var options = {
           title: 'Risk vs Reward',
           curveType: 'function',
           vAxis: {
@@ -88,9 +88,16 @@
              }
           },
           legend: { position: 'bottom' }
-        };
-
-        var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+        };*/
+        var options = {
+          title: 'Safe vs Risk',
+          width: 600,
+          height: 400,
+          bar: {groupWidth: "95%"},
+          legend: { position: "none" },
+        }
+        
+        var chart = new google.visualization.BarChart(document.getElementById('chart_div'));
         google.visualization.events.addListener(chart, 'ready', AddNamespace);
         chart.draw(data, options);        
         //drawToolbar();
