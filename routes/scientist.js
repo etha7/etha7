@@ -2,10 +2,10 @@
 /*
  * GET role page.
  */
-var data = require('../data.json');
+
+var data1 = require('../public/json/sampleData.json');
 
 exports.view = function(req, res){
-    data.choices.push({"cheese": "boots" });
-	console.log(data);
-    res.render('scientist', data);
+	console.log(data1);
+    res.render('scientist', data1);
 };

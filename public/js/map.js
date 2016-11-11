@@ -4,7 +4,9 @@ var canvasLeft = canvas.offsetLeft,
     canvasTop = canvas.offsetTop;
 var context = canvas.getContext("2d");
 var clickableElements = [];
-
+var safeClicked;
+var safeCount = 0;
+var riskCount = 0;
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight; 
 
@@ -17,6 +19,54 @@ function mapMain(){
    
      //Enable touch based interface for mobile devices
    createjs.Touch.enable(stage);
+
+   var selectionButton = document.getElementById("game-start-button");
+   selectionButton.addEventListener('click', function(event) {
+      //var fs = require('fs');
+         if(safeClicked) {
+            var json = $.getJSON('../json/mapGraph.json', function(data) {  
+              console.log(data);
+            });
+            safeCount = json["Safe Node"];
+            safeCount++;
+            console.log("Safe count is " + safeCount);
+         }
+         else {
+            var json = $.getJSON('../../json/mapGraph.json', function(data) {         
+                            console.log(data);
+                        });
+            riskCount = json["Risk Node"];
+            riskCount++;
+            console.log("Risk count is " + riskCount);
+
+         }
+         var obj_cols = {
+            cols: []
+         };
+         // Number of people who chose Safe node
+         obj_cols.cols.push({"cols": [
+             {"type":"string"},
+             {"type":"number"}
+             ]});
+
+         var json = JSON.stringify(obj_cols);
+
+         //fs.writeFile('../json/mapGraph.json', json, 'utf8', callback);
+
+         var obj_row = {
+            rows: []
+         }
+
+         obj_row.rows.push( {"rows":[
+             {"c": [{ "v": "Safe Node"},{"v":safeCount} ]},
+             {"c": [{ "v": "Risk Node"},{"v":riskCount} ]}
+         ]});
+
+         var json = JSON.stringify(obj_row);
+         //fs.writeFile('../json/mapGraph.json', json, 'utf8', callback);
+
+   });
+
 
    //Resize canvas on window resize   
    window.addEventListener('click', function(event) {
@@ -400,6 +450,7 @@ function City(pos, baseColor, stage, type, citySelectionText){
       this.stickSize = 25;
       this.stickColor = "blue";
       this.stick =  new Circle(this.pos, this.stickColor, this.stickSize);
+
    } else { 
       this.stickSize = 25;
       this.stickColor = baseColor;
@@ -416,6 +467,13 @@ function City(pos, baseColor, stage, type, citySelectionText){
         clickableElements.forEach(function(element) {
           element.unselected(stage);
         });
+
+        if(this.cityType == "Safe") {
+           safeClicked = true;
+        }
+        else {
+           safeClicked = false;
+        }
         var stickSize = 25;
         var stickColor = "blue";
         var stick =  new Circle(pos, stickColor, stickSize);
