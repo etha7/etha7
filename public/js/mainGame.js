@@ -1,20 +1,48 @@
+/* IMPORTANT: Several variables in this js, like "io", exist because
+   mainGame.js is included below socket.io.js in views/citizen.handlebars.
+    */
+
+
+/* Import classes */
+
+//Requiring enabled by browserify
+var EaselObject = require("./Classes").EaselObject;
+var Circle      = require("./Classes").Circle;
+var Rectangle   = require("./Classes").Rectangle;
+var Resource    = require("./Classes").Resource;
+var Camera      = require("./Classes").Camera;
+var DiseaseZone = require("./Classes").DiseaseZone;
+var Player      = require("./Classes").Player;
+var Joystick    = require("./Classes").Joystick;
+var TeamButton  = require("./Classes").TeamButton;
+
+
+var gameport = 8000; //port clients will connect to 
 var canvas = document.getElementById("mainCanvas");
 var context = canvas.getContext("2d");
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight; 
+
+var player,
+    remotePlayers,
+    deltaTime,
+    socket;
+
 main();
 
 
 function main(){
+   
    //Initialize the game world
    var stage        = new createjs.Stage("mainCanvas");
    var world        = initWorld();
    var background   = initBackground(stage, canvas);
+
    
    //Initalize the game controls and player
-   var leftJoystick = initJoysticks(stage).left;
-   var player       = initPlayer(stage, leftJoystick);
-       player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
+   player           = initPlayer(stage);
+   player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
+   var leftJoystick = initJoysticks(stage, player).left;
    var teamButton   = initTeamButton(stage, player);
 
    //Initialize array of resource objects and resource text
@@ -42,22 +70,48 @@ function main(){
 
    }, false);
    
-   //Main game loop
+
+   /* Multiplayer initialization code */
+   //Connect client to server 
+   socket = io.connect("http://localhost", {port: gameport, transports: []});
+   console.log("socket:");
+   console.log(socket);
+   //TODO change from localhost
+   
+   //Initialize remote players 
+   remotePlayers = [];
+
+   //Listen for events
+   setEventHandlers();
+
+
+   //Main game loop----------------------------------------------
    var FPS = 50;
    createjs.Ticker.setFPS(FPS);
+   var previousTime = (new Date()).getTime();
+   var currentTime;
+   // pixels/frame * frames/second = pixels/second: delta time is
+   // empirical FPS
    createjs.Ticker.addEventListener("tick", function(){
+
+      //Logic to create deltaTime so movement is relative to time
+      //rather than frames.
+      var timer = new Date();
+      currentTime = timer.getTime();
+      deltaTime = currentTime - previousTime;
+      previousTime = currentTime;
 
       //Do pathfinding calculation
       easystar.calculate();
 
       //Move player according to joystick
-      player.move();
+      leftJoystick.move(deltaTime);
 
       //Check if player is colliding with resources
       player.pickup(stage, resources);
 
       //Move along calculated pathfinding path
-      player.goPath();
+      player.goPath(deltaTime);
 
       //Update resource text
       resourceText.text = "Resources: "+player.getResources();
@@ -76,296 +130,8 @@ Array.prototype.equals = function( array ) {
            this.every( function(this_i,i) { return this_i == array[i] } )  
 }
 
+
 //Utility functions:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-//Class definitions:------------------------------------------------
-
-//Base class for all primitive objects that get drawn
-function EaselObject( pos, color){
-
-   this.easelShape = new createjs.Shape();
-   this.getEaselShape = function(){ return this.easelShape; };
-
-   //Set initial position
-   this.easelShape.x = pos.x;
-   this.easelShape.y = pos.y;
-
-   //Position setters and getters
-   this.getPos = function() { return {x: this.getEaselShape().x, y: this.getEaselShape().y}; };
-   this.setPos = function(pos) { this.getEaselShape().x = pos.x; this.getEaselShape().y = pos.y;};
-
-   //The object's color
-   this.color = color;
-
-   //Adds the current object to the stage
-   this.add = function(stage) {
-      stage.addChild(this.getEaselShape());
-      stage.update();
-   };
-
-   //Removes the current object from the stage
-   this.remove = function(stage) {
-      stage.removeChild(this.getEaselShape());
-   };
-}
-
-//A class for representing circles
-function Circle(pos, color, radius ){
-   //Call constructor of superclass
-   EaselObject.call(this, pos, color);  
-
-   //Set the new radius
-   this.radius = radius;
-
-   //Function: draw a circle
-   this.draw = function(){
-      this.easelShape.graphics.clear();
-      this.easelShape.graphics.beginFill(this.color).drawCircle(0,0,this.radius);
-   }
-
-   //Function: draw a dotted circle
-   this.drawDotted = function(){
-      this.easelShape.graphics.clear();
-
-      //20 pixel lines with 5 pixel gaps
-      this.easelShape.graphics.setStrokeDash([20,5]);
-      this.easelShape.graphics.setStrokeStyle(2).beginStroke(this.color).drawCircle(0,0,this.radius);
-   }
-    
-   this.draw();
-}
-
-function Rectangle(pos, color, width, height){
-   EaselObject.call(this, pos, color);
-
-   this.width  = width;
-   this.height = height;
-
-
-   //Easel.js draws rectangles using coordinates representing the rectangle's upper left corner
-   //The position offsets here draw the rectangle such that pos represents the center if it. 
-   this.easelShape.x -=  this.width/2
-   this.easelShape.y -=  this.height/2
-   
-   //Draw the rectangle
-   this.draw = function(){
-      this.easelShape.graphics.clear();
-      this.getEaselShape().graphics.beginFill(this.color).drawRect(0, 0, this.width, this.height);
-   }
-   this.draw();
-
-}
-
-function Resource(value){
-   Circle.call(this, {x: 0, y: 0}, "white", 10);
-   this.value = value;
-}
-
-function DiseaseZone(playerPos){
-   Circle.call(this, playerPos, "red", 75);
-   this.drawDotted();
-   this.AllowsTeams = false;
-
-   //Inverts whether the diseaseZone allows teams
-   //TODO make property of player
-   this.invertAllowsTeams = function(){
-
-     //Set to not allow teams
-     if(this.AllowsTeams === true){
-        this.color = "red";
-        this.drawDotted();
-     }
-     else
-     {
-        this.color = "green";
-        this.drawDotted();
-     }
-     this.AllowsTeams = !this.AllowsTeams;
-   };
-   
-}
-
-function Camera(pos, width, height){
-   this.pos = pos;
-   this.width = width;
-   this.height = height;
-   this.getPos = function(){return this.pos;};
-   this.setPos = function(pos) {this.pos = pos;};
-   this.getWidth = function(){return this.width;};
-   this.setWidth = function(width) {this.width = width;};
-   this.getHeight = function(){return this.height;};
-   this.setHeight = function(height) {this.height = height;};
-}
-
-function Player(joystick){
-   Circle.call( this, {x: canvas.width/2, y: canvas.height/2}, "red", 20);
-
-   this.diseaseZone = new DiseaseZone(this.getPos());
-   this.joystick = joystick;
-   this.resources = 0;
-   this.camera = {};
-   this.path = [];
-
-   this.getCamera = function(){ return this.camera;};
-   this.setCamera = function(camera){ this.camera = camera; };
-   
-   //Moves the player along a path determined by A* algorithm
-   this.goPath = function(){
-      
-      if(this.path.equals([]) === false)
-      {
-         this.setPos({x: this.path[0].x, y: this.path[0].y});
-         this.path.splice(0,1); //Remove element 0;
-      }
-   }
-
-   this.getResources = function(){ return this.resources;};
-   this.setResources = function(newResources){ this.resources = newResources};
-
-   //Override inherited setPos
-   var parentSetPos = this.setPos;
-   this.setPos = function(pos){ 
-       this.camera.setPos(pos);
-       this.diseaseZone.setPos(pos);
-       parentSetPos.call(this, pos); //need call so 'this' is defined as the current Player
-   };
-
-   //Override inherited add
-   var parentAdd = this.add;
-   this.add = function(stage){
-      this.diseaseZone.add(stage);
-      parentAdd.call(this, stage);
-   }
-      
-   
-   //Update player's location with respect to joystick
-   this.move = function () {
-
-      //Move player with left joystick
-      var playerPos = this.getPos();
-      var direction = this.joystick.getDirection();
-      if(isNaN(direction.x) || isNaN(direction.y))
-      {
-         direction.x = 0;
-         direction.y = 0;
-      }
-      playerPos.x += this.joystick.getForce()*direction.x;
-      playerPos.y += this.joystick.getForce()*direction.y;
-      this.setPos(playerPos);
-   };
-
-   //Check if standing on any resources
-   this.pickup = function(stage, resources){
-      var easelShape = this.getEaselShape();
-      var resourceCopy = resources.slice(0,resources.length);
-      for (var x of resourceCopy){
-         var pos = x.getPos();
-         var pt =  easelShape.globalToLocal(pos.x, pos.y); //hitTest needs coordinates relative to easelShape
-         if(easelShape.hitTest(pt.x, pt.y)) //If player is over resource
-         {
-            this.setResources(this.getResources() + x.value);
-            var remIndex = resources.indexOf(x);
-            resources.splice(remIndex,1);
-            x.remove(stage);
-         }
-      }
-   }
-}
-
-//Controls ---------------------------------------------------------
-
-//Creates a Joystick at the given location
-function Joystick(pos){
-
-   this.pos = pos;
-
-   this.baseSize = 35;
-   this.baseColor = "grey";
-   this.base = new Circle(this.pos, this.baseColor, this.baseSize);
-
-   this.stickSize = 25;
-   this.stickColor = "white";
-   this.stick =  new Circle(this.pos, this.stickColor, this.stickSize);
-
-   //Limited Dragging
-   this.stick.getEaselShape().on("pressmove", function(e){
-      e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
-      e.target.y = e.stageY;
-   });
-   
-   var baseVar = this.base; //No idea why I have to do this; scoping?
-   //Reset stick to base potition on when joystick is released
-   this.stick.getEaselShape().on("pressup", function(e){
-      e.target.x = baseVar.getPos().x;  
-      e.target.y = baseVar.getPos().y;
-   });
-   
-   this.getPos = function() { return this.stick.getPos()};
-   this.setPos = function(pos) {
-      this.base.setPos(pos);
-      this.stick.setPos(pos);
-   }
-
-   //Get the direction the joystick is pointing
-   this.getDirection = function(){
-      var v = this.stick.getPos();
-      var w = this.base.getPos();
-      var x1 = v.x - w.x; //new coordinates
-      var y1 = v.y - w.y;
-      var mag1 = Math.sqrt(x1*x1 + y1*y1);
-
-      return {x: x1/mag1, y: y1/mag1}
-   };
-
-   //Get the force acting on a player by the joystick
-   this.getForce = function(){
-      var v = this.stick.getPos();
-      var w = this.base.getPos();
-      return Math.abs(Math.sqrt(v.x*v.x + v.y*v.y) - Math.sqrt(w.x*w.x + w.y*w.y));
-   };
-
-   this.add = function(stage){
-      stage.addChild(this.base.getEaselShape());
-      stage.addChild(this.stick.getEaselShape());
-      stage.update();
-   }
-
-}
-
-//Button for opting in or out of teams
-function TeamButton(pos, color, player){
-
-   //TODO make baseSize some kind of global variable
-   var baseSize = 35;
-   Circle.call(this, pos, color, baseSize);
-
-   this.player = player;
-
-   this.getEaselShape().on("click", function(e){
-      player.diseaseZone.invertAllowsTeams();
-   });
-}
-//Controls ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-//Dragable Class: Makes objects Dragable
-function Dragable(pos, color){
-
-   //Call superclass's constructor
-   EaselObject.call(this, pos, color);
-
-   //Update coordinates while object is moved while pressed
-   this.getEaselShape().on("pressmove", function(e){
-      e.target.x = e.stageX; //(stageX, stageY) = mouseCoordinate
-      e.target.y = e.stageY;
-   });
-
-};
-
-
-
-
-//Class definitions:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //Creates a square world of size 1000 that our pathfinding algorithm can use
 function initWorld(){
@@ -428,10 +194,10 @@ function initBackground(stage, canvas){
 }
 
 //Create desired Joysticks for the user
-function initJoysticks(stage){
+function initJoysticks(stage, player){
    var canvas = document.getElementById("mainCanvas");
    //var right  = new Joystick({x:canvas.width - canvas.width/6, y: canvas.height/2});
-   var left = new Joystick({x: canvas.width/6, y: canvas.height/2});
+   var left = new Joystick({x: canvas.width/6, y: canvas.height/2}, player);
 
    //Add to canvas
    //right.add(stage);
@@ -441,8 +207,8 @@ function initJoysticks(stage){
 }
 
 //Creates a player and associates it to a joystick
-function initPlayer(stage, stick){
-   player = new Player(stick);
+function initPlayer(stage){
+   player = new Player({x: stage.canvas.width/2, y: stage.canvas.height/2});
    player.add(stage);
    return player;
 }
@@ -477,25 +243,69 @@ function initPathfinding(world, player, background){
                   console.log("Path not found");
               }
               else{
-
-                  //By default, easystar produces paths of very high resolution
-                  //The code which updates the player's position in order to follow this path
-                  //can only move one position per tick. In order to speed up the player
-                  //either ticks must go faster, or the path has to have less elements without looking
-                  //choppy. The code below attempts the latter.
-
-                  //Remove every fourth element of the path 
-                  for(var i = 0; i < path.length; i++)
-                  {
-                     if((i%2) === 0)
-                     {
-                        path.splice(i,2); //remove i from path
-                        i++;
-                     }
-                  }
                   player.path = path;
               }
          });
    });
    return easystar;
+}
+
+function setEventHandlers() {
+   socket.on("connect", onSocketConnected);
+   socket.on("disconnect", onSocketDisconnect);
+   socket.on("new player", onNewPlayer);
+   socket.on("move player", onMovePlayer);
+   socket.on("remove player", onRemovePlayer);
+};
+
+function onSocketConnected() {
+   console.log("Server :: Client connected on port : "+gameport);
+   socket.emit("new player", {x: player.getPos().x, y: player.getPos().y});
+}
+
+function onSocketDisconnect() {
+   console.log("Server :: Client disconnected from port : "+gameport);
+}
+
+function onNewPlayer(data) {
+   console.log("Server :: New player "+data.id+"connected on port : "+gameport);
+
+   var newPlayer = new Player({x: data.x, y: data.y}); //TODO rewrite player 
+   newPlayer.id = data.id;
+   remotePlayers.push(newPlayer);
+}
+
+function onMovePlayer(data) {
+   var movePlayer = playerById(data.id);
+
+   if(!movePlayer) {
+      console.log("Player not found: " + data.id);
+      return;
+   }
+
+   movePlayer.setPos({x: data.x, y: data.y});
+
+}
+
+function onRemovePlayer(data) {
+   var removePlayer = playerById(data.id);
+
+   if(!removePlayer) {
+      console.log("Player not found: "+data.id);
+      return;
+   };
+
+   //Remove the player from remoteplayers array
+   remotePlayers.splice(remotePlayers.indexOf(removePlayer),1);
+}
+
+// Multiplayer Helper Functions 
+function playerById(id){
+   var i ;
+   for( i = 0; i < remotePlayers.length; i++) {
+      if(remotePlayers[i].id == id)
+            return remotePlayers[i];
+   };
+
+   return false;
 }
