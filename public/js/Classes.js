@@ -1,3 +1,4 @@
+
 //Utility functions:------------------------------------------------
 
 //Utility function for comparing arrays for equality
@@ -60,7 +61,7 @@ function Circle(pos, color, radius ){
       this.easelShape.graphics.clear();
 
       //20 pixel lines with 5 pixel gaps
-      this.easelShape.graphics.setStrokeDash([20,5]);
+      //this.easelShape.graphics.setStrokeDash([20,5]);
       this.easelShape.graphics.setStrokeStyle(2).beginStroke(this.color).drawCircle(0,0,this.radius);
    }
     
@@ -132,25 +133,31 @@ function Camera(pos, width, height){
 function Player(pos){
    Circle.call( this, pos, "red", 20);
     //{x: canvas.width/2, y: canvas.height/2}, "red", 20);
-    
+   
+   this.setPos(pos);
+
    this.id;
    this.diseaseZone = new DiseaseZone(this.getPos());
    this.resources = 0;
    this.camera = {};
    this.path = [];
 
-   this.getCamera = function(){ return this.camera;};
-   this.setCamera = function(camera){ this.camera = camera; };
+   //this.getCamera = function(){ return this.camera;};
+   //this.setCamera = function(camera){ this.camera = camera; };
    
    //Moves the player along a path determined by A* algorithm
    this.goPath = function(deltaTime){
       
       if(this.path.equals([]) === false)
       {
-         this.setPos({x: this.path[0].x, y: this.path[0].y});
+         var pos = {x: this.path[0].x, y: this.path[0].y};
+         this.setPos(pos);
          this.path.splice(0, 1*deltaTime); //Remove deltaTime elements starting from 
                                 //element 0;
+         return pos;
       }
+      
+      return {x: this.getPos().x, y: this.getPos().y};
    }
 
    this.getResources = function(){ return this.resources;};
@@ -159,7 +166,7 @@ function Player(pos){
    //Override inherited setPos
    var parentSetPos = this.setPos;
    this.setPos = function(pos){ 
-       this.camera.setPos(pos);
+       //this.camera.setPos(pos);
        this.diseaseZone.setPos(pos);
        parentSetPos.call(this, pos); //need call so 'this' is defined as the current Player
    };

@@ -6,7 +6,6 @@
 /* Import classes */
 
 //Requiring enabled by browserify
-
 var EaselObject = require("./Classes").EaselObject;
 var Circle      = require("./Classes").Circle;
 var Rectangle   = require("./Classes").Rectangle;
@@ -24,8 +23,6 @@ var context = canvas.getContext("2d");
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight; 
 
-var stage        = new createjs.Stage("mainCanvas");
-
 var player,
     remotePlayers,
     deltaTime,
@@ -37,13 +34,14 @@ main();
 function main(){
    
    //Initialize the game world
+   var stage        = new createjs.Stage("mainCanvas");
    var world        = initWorld();
    var background   = initBackground(stage, canvas);
 
    
    //Initalize the game controls and player
    player           = initPlayer(stage);
-   //player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
+   player.setCamera(new Camera(player.getPos(), canvas.width, canvas.height));
    var leftJoystick = initJoysticks(stage, player).left;
    var teamButton   = initTeamButton(stage, player);
 
@@ -113,19 +111,7 @@ function main(){
       player.pickup(stage, resources);
 
       //Move along calculated pathfinding path
-
-      var newPathPos;
       player.goPath(deltaTime);
-      socket.emit("move player", {  x: player.getPos().x,
-                                    y: player.getPos().y});
-              
-      for(i = 0; i < remotePlayers.length; i++) {
-         currPlayer = remotePlayers[i];
-         newPathPos = currPlayer.goPath(deltaTime);
-         socket.emit("move player", {  x: newPathPos.x,
-                                       y: newPathPos.y });
-      }
-
 
       //Update resource text
       resourceText.text = "Resources: "+player.getResources();
@@ -146,7 +132,6 @@ Array.prototype.equals = function( array ) {
 
 
 //Utility functions:^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 
 //Creates a square world of size 1000 that our pathfinding algorithm can use
 function initWorld(){
@@ -223,12 +208,8 @@ function initJoysticks(stage, player){
 
 //Creates a player and associates it to a joystick
 function initPlayer(stage){
-
-   //Init local player
    player = new Player({x: stage.canvas.width/2, y: stage.canvas.height/2});
    player.add(stage);
-
-
    return player;
 }
 
@@ -278,40 +259,27 @@ function setEventHandlers() {
 };
 
 function onSocketConnected() {
-   console.log("Client :: Client connected on port : "+gameport);
-
-   console.log("emmitting LOCATION");
-   console.log(stage.canvas.width/2);
-
-   socket.emit("new player", {   id: player.id, 
-                                  x: stage.canvas.width/2, 
-                                  y: stage.canvas.height/2 });
+   console.log("Server :: Client connected on port : "+gameport);
+   socket.emit("new player", {x: player.getPos().x, y: player.getPos().y});
 }
 
 function onSocketDisconnect() {
-   console.log("Client :: Client disconnected from port : "+gameport);
+   console.log("Server :: Client disconnected from port : "+gameport);
 }
 
 function onNewPlayer(data) {
-   console.log("Client :: New player "+data.id+"connected on port : "+gameport);
+   console.log("Server :: New player "+data.id+"connected on port : "+gameport);
 
-   
    var newPlayer = new Player({x: data.x, y: data.y}); //TODO rewrite player 
-
-   console.log("NEW PLAYER LOCATION");
-   console.log(newPlayer.getPos());
    newPlayer.id = data.id;
    remotePlayers.push(newPlayer);
-
-   //stage = current stage global
-   newPlayer.add(stage);
 }
 
 function onMovePlayer(data) {
    var movePlayer = playerById(data.id);
 
    if(!movePlayer) {
-      console.log("Client :: Player not found: " + data.id);
+      console.log("Player not found: " + data.id);
       return;
    }
 
@@ -323,7 +291,7 @@ function onRemovePlayer(data) {
    var removePlayer = playerById(data.id);
 
    if(!removePlayer) {
-      console.log("Client :: Player not found: "+data.id);
+      console.log("Player not found: "+data.id);
       return;
    };
 
@@ -341,5 +309,3 @@ function playerById(id){
 
    return false;
 }
-
-
