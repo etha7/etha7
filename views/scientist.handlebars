@@ -35,7 +35,6 @@
 
     <!--<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
     <script type="text/javascript">
-     <!-- This adds the proper namespace on the generated SVG -->
       function AddNamespace(){
         var svg = jQuery('#chart_div svg');
         svg.attr("xmlns", "http://www.w3.org/2000/svg");
@@ -101,16 +100,15 @@
         google.visualization.events.addListener(chart, 'ready', AddNamespace);
         chart.draw(data, options);        
         //drawToolbar();
-
-        <!-- @cloudformatter calls to render the SVG -->
     
-        <!-- Convert the SVG to PDF and download it -->
+
         var click="return xepOnline.Formatter.Format('JSFiddle', {render:'download', srctype:'svg'})";
         jQuery('#buttons').append('<button onclick="'+ click +'">PDF</button>');
-        <!-- Convert the SVG to PNG@120dpi and open it -->
+        
+
         click="return xepOnline.Formatter.Format('JSFiddle', {render:'newwin', mimeType:'image/png', resolution:'120', srctype:'svg'})";
         jQuery('#buttons').append('<button onclick="'+ click +'">PNG @120dpi</button>');
-        <!-- Convert the SVG to JPG@300dpi and open it -->
+
         click="return xepOnline.Formatter.Format('JSFiddle', {render:'newwin', mimeType:'image/jpg', resolution:'300', srctype:'svg'})";
         jQuery('#buttons').append('<button onclick="'+ click +'">JPG @300dpi</button>');
 
@@ -207,9 +205,6 @@
                           </div>
                           <div id="buttons" class="buttons"></div>
                           <hr/>
-                          <div id="help">
-                              <a href="#help" class="btn btn-default" id="help">Help</a>
-                          </div>
                           <div id="RiskContent" style="visibility:hidden;">
                           {{#if riskGraph}}
                           <h2>{{riskGraph.riskTitle}}</h2>
@@ -234,11 +229,6 @@
                 </div>
             </div>
         </div>
-<<<<<<< HEAD
-=======
-        
-
->>>>>>> 381342fa89bd35996a251e07729d2cccb4d9956e
         <!-- /#page-content-wrapper -->
 
     </div>
