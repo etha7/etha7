@@ -8,6 +8,7 @@ var clickableElements = [];
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight; 
 
+
 mapMain();
 
 function mapMain(){

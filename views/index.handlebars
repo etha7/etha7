@@ -8,11 +8,19 @@
       <link href="css/bootstrap.min.css" rel="stylesheet">
       <link href="css/bootstrap-theme.min.css" rel="stylesheet">
       <link href="css/default.css" rel="stylesheet">
-
-      <body>
+</head>
+<style>
+body {background-color: lightgreen;}
+h1   {color: blue;}
+p    {color: red;}
+</style>
+      <body bgcolor="#EEEEEE">
       <!-- this is a comment in HTML -->
       <div class="col-md-6 center-block text-center">
-         <h1>Disease.io</h1> <!-- h1 through h5 are headers. The higher the number, the smaller the header -->
+         <!-- Banner Image -->
+         <div>
+         <img src="/images/diseaseio.png" alt="Disease.io" width="50%" height="10%">
+         </div>
             <h4>Embark upon a citizen science journey to protect yourself as you explore diseased lands!</h4>
 
             <!-- p means paragraph -->
@@ -34,14 +42,12 @@
       <script>
       $("#AboutButton").click(function(e) {
           e.preventDefault();
-          alert("There is no knowledge, all is darkness."); 
           //TODO make help do something.
       });
       </script>
       <script>
       $("#HelpButton").click(function(e) {
           e.preventDefault();
-          alert("There is no aid, you stand alone in a sea of shadow and uncertainty."); 
           //TODO make help do something.
       });
       </script>
