@@ -32,6 +32,7 @@
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="../js/xepOnline.jqPlugin.js"></script>
 
+
     <!--<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
     <script type="text/javascript">
      <!-- This adds the proper namespace on the generated SVG -->
@@ -51,15 +52,25 @@
       function drawRiskChart() {
         
       // Create our data table out of JSON data loaded from server.
-
-
-       var data = google.visualization.arrayToDataTable([
+      var jsonData = $.ajax({
+          url: "json/riskData.json",
+          dataType: "json",
+          async: false
+          }).responseText;
+      
+       /*var data = google.visualization.arrayToDataTable([
           ['Percent Chance of Sickness', ''],
           ['5%',  1000],
           ['10%',  1170],
           ['15%',  660],
           ['20%',  1030]
         ]);
+        
+        var jsonData = $.getJSON("json/riskData.json", function(json) {
+            console.log(json); // this will show the info it in firebug console
+        });  
+        */
+        var data = new google.visualization.DataTable(jsonData);
 
         var options = {
           title: 'Risk vs Reward',
@@ -148,22 +159,6 @@
 
 
       }
-      function drawToolbar() {
-      var components = [
-          {type: 'igoogle', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA',
-           gadget: 'https://www.google.com/ig/modules/pie-chart.xml',
-           userprefs: {'3d': 1}},
-          {type: 'html', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA'},
-          {type: 'csv', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA'},
-          {type: 'htmlcode', datasource: 'https://spreadsheets.google.com/tq?key=pCQbetd-CptHnwJEfo8tALA',
-           gadget: 'https://www.google.com/ig/modules/pie-chart.xml',
-           userprefs: {'3d': 1},
-           style: 'width: 800px; height: 700px; border: 3px solid purple;'}
-      ];
-
-      var container = document.getElementById('toolbar_div');
-      google.visualization.drawToolbar(container, components);
-    };
     </script>
 </head>
 
