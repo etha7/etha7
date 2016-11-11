@@ -15,6 +15,8 @@ var scientist = require('./routes/scientist');
 var citizen = require('./routes/citizen');
 var map = require('./routes/map');
 var login = require('./routes/login');
+var help = require('./routes/help');
+var about = require('./routes/about');
 
 //Define the app
 var app = express();
@@ -46,6 +48,8 @@ app.get('/scientist', scientist.view);
 app.get('/citizen', citizen.view);
 app.get('/map', map.view);
 app.get('/index', index.view);
+app.get('/about', about.view);
+app.get('/help', help.view);
 
 //app.get('/science/:role', science.view);
 // Example route

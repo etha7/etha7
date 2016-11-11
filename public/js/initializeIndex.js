@@ -26,4 +26,11 @@ function initializePage() {
  $("#cancelButton").click(function(e) {
         window.location.href = "/index";
                                        });
+ $("#HelpButton").click(function(e) {
+        window.location.href = "/help";
+                                       });
+ $("#AboutButton").click(function(e) {
+        window.location.href = "/about";
+                                       });
+                                       
 }
