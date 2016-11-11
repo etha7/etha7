@@ -1,8 +1,8 @@
 {
   "riskGraph": 
     {
-      "riskTitle": "Risk vs Reward",
-      "riskDescription": "This is measured by comparing the percent chance of getting sick with the resources gathered."
+      "riskTitle": "Safe vs Risk",
+      "riskDescription": "This graph shows the number of people who enter a safe node versus a risk node."
         
     },
   "trustGraph": 
