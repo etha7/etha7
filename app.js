@@ -52,6 +52,6 @@ app.get('/about', about.view);
 
 //Server requirements
 var util       = require('util'),
-    server     = http.createServer(app),
+    server     = http.createServer(app)
 //    gameport   = 8080;
 //    server.listen(gameport);
