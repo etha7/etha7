@@ -54,4 +54,4 @@ app.get('/about', about.view);
 var util       = require('util'),
     server     = http.createServer(app)
 gameport   = 8080;
-    server.listen(gameport);
+    server.listen(process.env.PORT || gameport);
