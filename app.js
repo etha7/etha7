@@ -43,13 +43,8 @@ if ('development' == app.get('env')) {
 }
 
 // Add routes here
-app.get('/', login.view);
-app.get('/scientist', scientist.view);
-app.get('/citizen', citizen.view);
-app.get('/map', map.view);
-app.get('/index', index.view);
+app.get('/', index.view);
 app.get('/about', about.view);
-app.get('/help', help.view);
 
 //app.get('/science/:role', science.view);
 // Example route
@@ -58,101 +53,6 @@ app.get('/help', help.view);
 //Server requirements
 require('node-easel');
 var util       = require('util'),
-    //io         = require('socket.io'),
-    Player     = require('./public/js/Classes.js').Player,
     server     = http.createServer(app),
-    io         = require('socket.io').listen(server);
     gameport   = 8080;
     server.listen(gameport);
-
-/* Game server code */
-var players;
-
-    function init() {
-      players = [];
-      setEventHandlers();
-    };
-
-    var setEventHandlers = function() {
-      io.sockets.on("connection", onSocketConnection);
-    }
-
-
-    function onSocketConnection(client){
-      util.log("Server :: New player has connected : "+client.id);
-      client.on("disconnect", onClientDisconnect);
-      client.on("new player", onNewPlayer);
-      client.on("move player", onMovePlayer);
-    }
-
-    function onClientDisconnect(){
-      var removePlayer = playerById(this.id);
-
-      if(!removePlayer) {
-         util.log("Player not found: "+this.id);
-         return;
-      };
-      util.log("Server :: player has disconnected : "+this.id);
-
-      //Remove player from players array
-      players.splice(players.indexOf(removePlayer), 1);
-
-      //Broadcast removed player
-      this.broadcast.emit("disconnect", { id: removePlayer.id, 
-                                           x: removePlayer.getPos().x, 
-                                           y: removePlayer.getPos().y });
-
-    }
-
-    function onNewPlayer(data){
-
-      console.log("Server :: New player id: "+this.id);
-      var newPlayer = new Player({x: data.x, y: data.y});
-      console.log("Server :: location: ( "+newPlayer.getPos().x+", "+data.y+")");
-      newPlayer.id = this.id;
-
-      //update all clients but current
-      this.broadcast.emit("new player", { id: newPlayer.id, 
-                                          x: newPlayer.getPos().x, 
-                                          y: newPlayer.getPos().y });
-      var i, existingPlayer;
-      for (i = 0; i < players.length; i++) {
-         existingPlayer = players[i];
-
-         //Add existingPlayer to new client
-         this.emit("new player", { id: existingPlayer.id,
-                                    x: existingPlayer.getPos().x,
-                                    y: existingPlayer.getPos().y });
-      };
-
-      //Add new player to list of added players
-      players.push(newPlayer);
-    }
-
-
-    function onMovePlayer(data){
-
-       var movePlayer = playerById(this.id);
-       if(!movePlayer) {
-            util.log("Player not found: "+this.id);
-            return;
-       };
-       movePlayer.setPos({x: data.x, y: data.y});
-
-       this.broadcast.emit("move player", { id: this.id, 
-                                             x: movePlayer.getPos().x, 
-                                             y: movePlayer.getPos().y });
-
-    }
-
-    init();
-    // Multiplayer Helper Functions 
-    function playerById(id){
-        var i ;
-        for( i = 0; i < players.length; i++) {
-           if(players[i].id == id)
-                 return players[i];
-        };
-     
-        return false;
-     }
