@@ -51,7 +51,6 @@ app.get('/about', about.view);
 // app.get('/users', user.list);
 
 //Server requirements
-require('node-easel');
 var util       = require('util'),
     server     = http.createServer(app),
     gameport   = 8080;
